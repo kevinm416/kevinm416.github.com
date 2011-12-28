@@ -7,7 +7,9 @@ title: Solving Sudoku With Go
 
 26 Dec 2011
 
-A game of Sudoku requires that we satisfy the constraints that every row, column and 3x3 section contain the digits 1-9. We can approach finding the solution to an instance of a Sudoku puzzle as a search problem. For the uninterrupted code, see [sudoku-golang](http://www.github.com/kevinm416/sudoku-golang).
+A game of Sudoku requires that we satisfy the constraints that every row, column, and 3x3 section contains the digits 1-9. We can approach finding the solution to an instance of a Sudoku puzzle as a search problem. 
+
+For the uninterrupted code, see [sudoku-golang](http://www.github.com/kevinm416/sudoku-golang).
 
 ### Overall Strategy
 
@@ -48,7 +50,7 @@ func (this digitSet) Subtract(other digitSet) digitSet {
 }
 {% endhighlight %}
 
-The only operation that does not take constant time is counting the elements in the set. We need to count the numbe of 1's in the binary representation of the set, so finding the size of the set takes time proportional to the size of the set. However, even this cost could be reduced by making digitSet a struct, and adding a `uint8` to track the set's size.
+The only operation that does not take constant time is counting the elements in the set. We need to count the number of 1's in the binary representation of the set, so finding the size of the set takes time proportional to the size of the set. However, even this cost could be reduced by making digitSet a struct, and adding a `uint8` to track the set's size.
 
 {% highlight go %}
 func (this digitSet) Size() int {
@@ -92,7 +94,7 @@ type puzzleState struct {
 
 It was not absolutely necessary to track which positions have been assigned, since whenever a `digitSet` in `possibilities` has size 1, it is assigned. However, it makes some of the code nicer.
 
-Next we need to parse strings to construct the initial puzzle state. The string representation we will use is an 81 character string, where each 9 character segment is one row of the Sudoku board. We will allow '0' or '.' be used to represent empty positions. 
+Next we need to parse strings to construct the initial puzzle state. The string representation we will use is an 81 character string, where each 9 character segment is one row of the Sudoku board. We will allow '0' and '.' be used to represent empty positions. 
 
 {% highlight go %}
 func NewPuzzleState(vals string) *puzzleState {
@@ -165,7 +167,7 @@ func (this *puzzleState) checkAssignment(i, j int) {
 
 This process is actually good enough to solve most easy to medium difficulty Sudoku puzzles. To solve all Sudoku puzzles, we need to implement the search algorithm. We will use recursive depth first search with the minimum remaining values heuristic. 
 
-To keep assignments from affecting puzzle states at higher levels of the recursive search, we need a `Clone` method for `puzzleState`. Array assignment in Go copies the array, so the original `puzzleState` will not be affected by any changes made to its clone. 
+To keep assignments from affecting puzzle states at higher levels of the recursive search, we need a `Clone` method for `puzzleState`. Array assignment in Go copies the array, so in the code below, the original `puzzleState` will not be affected by any changes made to its clone. 
 
 {% highlight go %}
 func (this *puzzleState) Clone() *puzzleState {
@@ -176,7 +178,7 @@ func (this *puzzleState) Clone() *puzzleState {
 }
 {% endhighlight %}
 
-Now we are ready to implement `search`. The `search` function assigns an unassigned position one of its possible values, then recurses. If we are able to assign all positions a value, then we have a solution, since we are only assigning valid values. If all possible assignments for one variable do not lead to a solution, then we return false as the second argument so signify that the current path is a dead end.
+Now we are ready to implement `search`. The `search` function assigns an unassigned position one of its possible values, then recurses. If we are able to assign all positions a value, then we have a solution, since we are only assigning valid values. If all possible assignments for one variable do not lead to a solution, then we return false as the second argument to signify that the current path is a dead end.
 
 {% highlight go %}
 func search(puzzle *puzzleState) (*puzzleState, bool) {
@@ -226,3 +228,5 @@ func Solve(puzzle *puzzleState) (slnState *puzzleState, ok bool) {
     return
 }
 {% endhighlight %}
+
+To see the full, working code, take a look at [sudoku-golang](http://www.github.com/kevinm416/sudoku-golang) on Github. 
