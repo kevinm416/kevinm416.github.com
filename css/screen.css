@@ -160,7 +160,7 @@ ul.posts {
 
   #post pre {
     border: 1px solid #ddd;
-    background-color: #eef;
+    background-color: #272822;
     padding: 0 .4em;
   }
 
@@ -171,14 +171,13 @@ ul.posts {
 
   #post code {
     border: 1px solid #ddd;
-    background-color: #eef;
     font-size: 85%;
     padding: 0 .2em;
   }
 
-    #post pre code {
-      border: none;
-    }
+  #post pre code {
+    border: none;
+  }
 
   /* terminal */
 

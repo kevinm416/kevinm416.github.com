@@ -1,4 +1,15 @@
-.highlight  { background: #ffffff; }
+.highlight .go .c  { color: #75715e }
+.highlight .go .n  { color: #F8F8F2 }
+.highlight .go .k  { color: #46a9cf }
+.highlight .go .mf { color: #44dc7c } 
+.highlight .go .mh { color: #44dc7c } 
+.highlight .go .mi { color: #44dc7c } 
+.highlight .go .mo { color: #44dc7c } 
+.highlight .go .nb { color: #5569d6 }
+.highlight .go .cl { color: #75715e }
+.highlight .go .sc { color: #44dc7c }
+
+.highlight  { color: #f8f8f2 }
 .highlight .c { color: #999988; font-style: italic } /* Comment */
 .highlight .err { color: #a61717; background-color: #e3d2d2 } /* Error */
 .highlight .k { font-weight: bold } /* Keyword */
