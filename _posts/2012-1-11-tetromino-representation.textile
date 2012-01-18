@@ -1,0 +1,103 @@
+---
+layout: post
+title: Tetromino Representation
+math: true
+---
+
+h1. {{ page.title }}
+
+11 Jan 2013
+
+As part of a longer series centered around building Tetris in Python, we are going to first implement Tetrominos. To see the code in its entirety, see "tetris":https://github.com/kevinm416/tetris.
+
+h3. Overall Strategy
+
+Each Tetromino is composed of multiple equally sized sqaure segments laid out on a grid. A Tetromino ==\(t\)== can be represented as ==\(t\in\mathbb{N}\times\mathbb{N}\)==, where each element of ==\(t\)== represents the center of one square in the tetronimo. For example, when the origin is at the lower left:
+
+!/resources/zblock.png(Z Tetromino)! ==\( = \)== !/resources/zblock_skeleton.png(Z Tetromino)! ==\( =[(0,1),(0,2),(1,0),(1,1)]\)== 
+
+There are two basic operations that we need Tetrominos to support: translation, and rotation by 90&deg;.
+
+h3. Rotation
+
+We are going to use the current Tetris Guideline standard for rotation: the "Super Rotation System":http://tetris.wikia.com/wiki/SRS. Tetrominos J, L, S, T, and Z are rotated in a square of width 3. I is rotated in a square of width 4, and O is rotated in a square of width 2. 
+
+So given a Tetromino in it's initial position, we can rotate it by 90&deg; by translating the Tetromino so it's center is over the origin, applying a rotation matrix, and then applying the inverse translation back. However, we need to remember that a Tetromino's size once we convert to points in Cartesian Coordinates is one less than its length when measured as blocks on the grid.
+
+For example, the I tetromino is 4 blocks long at its longest point, but once converted to the Cartesian Coordinate representation is only 3 units long:
+
+!/resources/iblock.png(I Tetromino)!
+
+We will need both forward and reverse rotation by 90&deg;.
+==\[
+\displaylines{
+CCW = \begin{bmatrix} cos(90) & -sin(90) \\ sin(90) & cos(90) \end{bmatrix} = 
+    \begin{bmatrix} 0 & -1 \\ 1 & 0 \end{bmatrix} \cr
+CW = \begin{bmatrix} cos(-90) & -sin(-90) \\ sin(-90) & cos(-90) \end{bmatrix} = 
+    \begin{bmatrix} 0 & 1 \\ -1 & 0 \end{bmatrix} \cr
+}\]==
+
+Now, for a Tetromino of size ==\(n\)== in our Cartesian Coordinate representation, we can rotate each point ==\((x,y)\)== it by a generic rotation ==\(R\)==. 
+
+==\[\begin{bmatrix} x'_{R} \\ y'_{R} \end{bmatrix} = R(\begin{bmatrix} x \\ y \end{bmatrix} - \begin{bmatrix} n/2 \\ n/2 \end{bmatrix}) + \begin{bmatrix} n/2 \\ n/2 \end{bmatrix}\]==
+
+And then use the ±90&deg; rotation matrices we calculated:
+
+==\[
+\displaylines{
+\begin{bmatrix} x'_{CCW} \\ y'_{CCW} \end{bmatrix} = 
+	\begin{bmatrix} 0 & -1 \\ 1 & 0 \end{bmatrix}(\begin{bmatrix} x \\ y \end{bmatrix} - \begin{bmatrix} n/2 \\ n/2 \end{bmatrix}) + \begin{bmatrix} n/2 \\ n/2 \end{bmatrix} = 
+	\begin{bmatrix} -y \\ x \end{bmatrix} + \begin{bmatrix} n \\ 0 \end{bmatrix} \cr
+\begin{bmatrix} x'_{CW} \\ y'_{CW} \end{bmatrix} = 
+	\begin{bmatrix} 0 & 1 \\ -1 & 0 \end{bmatrix}(\begin{bmatrix} x \\ y \end{bmatrix} - \begin{bmatrix} n/2 \\ n/2 \end{bmatrix}) + \begin{bmatrix} n/2 \\ n/2 \end{bmatrix} = 
+	\begin{bmatrix} y \\ -x \end{bmatrix} + \begin{bmatrix} 0 \\ n \end{bmatrix} \cr
+}\]==
+
+Now just translate this into Python, and we have the rotation code done.
+
+{% highlight python %}
+class Block:
+    def __init__(self, color, offset, size, positions):
+        self.color = color
+        self.offset = offset
+        self.size = size
+        self.positions = positions
+    def rotate_left(self):
+        return Block(self.color, self.offset, self.size,
+                     [(col, -row + self.size) for (row, col) in self.positions]) 
+    def rotate_right(self):
+        return Block(self.color, self.offset, self.size,
+                     [(-col + self.size, row) for (row, col) in self.positions])
+{% endhighlight %}
+
+h3. Translation
+
+Now, once if we start translating the Tetromino around the board, the rotation code we have written is no longer going to work, because the Tetromino is no longer going to be in an ==\(n\times n\)== square adjacent to the origin. 
+
+Instead of calculating a new square let us keep the Tetromino where it is, and add another tuple @(row, col)@ to our Tetromino representation that tracks the total translation (@self.offset@ above). This new offset tuple allows the rotation code to work as before. Then when we need the true positions - for colision detection for example - we can add the offset to each point in the Tetromino's set of positions.
+
+{% highlight python %}
+    def fall(self):
+        row, col = self.offset
+        return Block(self.color, (row + 1, col), self.size, self.positions)
+
+    def move_right(self):
+        row, col = self.offset
+        return Block(self.color, (row, col + 1), self.size, self.positions)
+
+    def move_left(self):
+        row, col = self.offset
+        return Block(self.color, (row, col - 1), self.size, self.positions)
+
+    def absolute_positions(self):
+        r, c = self.offset
+        return ((row + r, col + c) for (row, col) in self.positions)
+{% endhighlight %}
+
+You will notice that this does not require copying the list of positions. The rotation methods only modify newly created copies of positions lists, so we do not have to worry about Tetrominos sharing lists of positions.
+
+h3. Other Comments
+
+We have been creating a new @Block@ whenever we move the Tetromino. There is a reason for this behavior. In the code for a Tetris game, the user will be making keystrokes that are not necessarily valid. So we will need to move the falling block to a new position, and see if it is valid. 
+
+An easy approach to this is for the movement methods to each return a new @Block@. We can then test to see if the new @Block@ is in a valid position. If it is, then we assign the falling block to the newly created @Block@. This approach means that we do not need to move the @Block@ back in the event of an invalid move; we can just discard the invalid one. 
