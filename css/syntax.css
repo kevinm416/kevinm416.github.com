@@ -9,6 +9,12 @@
 .highlight .go .cl { color: #75715e }
 .highlight .go .sc { color: #44dc7c }
 
+.highlight .python .k { color: #66d9ef }
+.highlight .python .nc { color: #f8f8f2 }
+.highlight .python .nf { color: #a6e22e }
+.highlight .python .bp { color: #fd971f }
+.highlight .python .ow { color: #66d9ef }
+
 .highlight  { color: #f8f8f2 }
 .highlight .c { color: #999988; font-style: italic } /* Comment */
 .highlight .err { color: #a61717; background-color: #e3d2d2 } /* Error */
