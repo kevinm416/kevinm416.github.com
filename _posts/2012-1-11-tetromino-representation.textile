@@ -12,9 +12,9 @@ As part of a longer series centered around building Tetris in Python, we are goi
 
 h3. Overall Strategy
 
-Each Tetromino is composed of multiple equally sized sqaure segments laid out on a grid. A Tetromino ==\(t\)== can be represented as ==\(t\in\mathbb{N}\times\mathbb{N}\)==, where each element of ==\(t\)== represents the center of one square in the tetronimo. For example, when the origin is at the lower left:
+Each Tetromino is composed of multiple equally sized sqaure segments laid out on a grid. A Tetromino ==\(t\)== can be represented as ==\(t\subset\mathbb{N}\times\mathbb{N}\)==, where each element of ==\(t\)== represents the center of one square in the tetronimo. For example, when the origin is at the lower left:
 
-!/resources/zblock.png(Z Tetromino)! ==\( = \)== !/resources/zblock_skeleton.png(Z Tetromino)! ==\( =[(0,1),(0,2),(1,0),(1,1)]\)== 
+!/resources/zblock.png(Z Tetromino)! ==\( = \)== !/resources/zblock_skeleton.png(Z Tetromino)! ==\( =\{(0,1),(0,2),(1,0),(1,1)\}\)== 
 
 There are two basic operations that we need Tetrominos to support: translation, and rotation by 90&deg;.
 
@@ -22,9 +22,9 @@ h3. Rotation
 
 We are going to use the current Tetris Guideline standard for rotation: the "Super Rotation System":http://tetris.wikia.com/wiki/SRS. Tetrominos J, L, S, T, and Z are rotated in a square of width 3. I is rotated in a square of width 4, and O is rotated in a square of width 2. 
 
-So given a Tetromino in it's initial position, we can rotate it by 90&deg; by translating the Tetromino so it's center is over the origin, applying a rotation matrix, and then applying the inverse translation back. However, we need to remember that a Tetromino's size once we convert to points in Cartesian Coordinates is one less than its length when measured as blocks on the grid.
+So given a Tetromino in it's initial position, we can rotate it by 90&deg; by translating the Tetromino so it's center is over the origin, applying a rotation matrix, and then applying the inverse translation back. However, we need to remember that a Tetromino's size once we convert to points in Cartesian coordinates is one less than its length when measured as blocks on the grid.
 
-For example, the I tetromino is 4 blocks long at its longest point, but once converted to the Cartesian Coordinate representation is only 3 units long:
+For example, the I tetromino is originally 4 units long at its longest point, but once converted to the Cartesian coordinate representation is only 3 units long:
 
 !/resources/iblock.png(I Tetromino)!
 
@@ -37,7 +37,7 @@ CW = \begin{bmatrix} cos(-90) & -sin(-90) \\ sin(-90) & cos(-90) \end{bmatrix} =
     \begin{bmatrix} 0 & 1 \\ -1 & 0 \end{bmatrix} \cr
 }\]==
 
-Now, for a Tetromino of size ==\(n\)== in our Cartesian Coordinate representation, we can rotate each point ==\((x,y)\)== it by a generic rotation ==\(R\)==. 
+Now, for a Tetromino of size ==\(n\)== in our Cartesian coordinate representation, we can rotate each point ==\((x,y)\)== it by a generic rotation ==\(R\)==. 
 
 ==\[\begin{bmatrix} x'_{R} \\ y'_{R} \end{bmatrix} = R(\begin{bmatrix} x \\ y \end{bmatrix} - \begin{bmatrix} n/2 \\ n/2 \end{bmatrix}) + \begin{bmatrix} n/2 \\ n/2 \end{bmatrix}\]==
 
@@ -53,7 +53,7 @@ And then use the ±90&deg; rotation matrices we calculated:
 	\begin{bmatrix} y \\ -x \end{bmatrix} + \begin{bmatrix} 0 \\ n \end{bmatrix} \cr
 }\]==
 
-Now just translate this into Python, and we have the rotation code done.
+Now just translate this into Python, and we have the rotation code done. Be sure to note that ==\(x\)== represents columns, and ==\(y\)== represents rows.
 
 {% highlight python %}
 class Block:
@@ -62,9 +62,11 @@ class Block:
         self.offset = offset
         self.size = size
         self.positions = positions
+
     def rotate_left(self):
         return Block(self.color, self.offset, self.size,
                      [(col, -row + self.size) for (row, col) in self.positions]) 
+
     def rotate_right(self):
         return Block(self.color, self.offset, self.size,
                      [(-col + self.size, row) for (row, col) in self.positions])
