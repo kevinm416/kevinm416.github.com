@@ -72,7 +72,7 @@ class Timer(threading.Thread):
         self.paused.clear()
 {% endhighlight %}
 
-The code above creates events for pausing and cancelling the @Timer@, as well as creating a condition variable for the @Timer@ to sleep on, and a lock to synchronize access from other threads. Now we have everything we need to write the thread's run method. Inside @run@ we have the invariant that @self.evt_time@ is the time at which @self.fn@ should be executed.
+The code above creates events for pausing and canceling the @Timer@, as well as creating a condition variable for the @Timer@ to sleep on, and a lock to synchronize access from other threads. Now we have everything we need to write the thread's run method. Inside @run@ we have the invariant that @self.evt_time@ is the time at which @self.fn@ should be executed.
 
 {% highlight python %}
     def run(self):
@@ -93,7 +93,7 @@ The code above creates events for pausing and cancelling the @Timer@, as well as
             else : return
 {% endhighlight %}
 
-The first thing we do is set @self.evt_time@ because a thread could be created, but not run until later, and we want the first event to be scheduled based on when the thread is run. Then we want to sleep until @self.evt_time@. Also remember that other threads will be changing @self.evt_time@ when they are rescheduling the @Timer@, so we will need to synchronize access to that variable.
+The first thing we do inside @run@ is set @self.evt_time@ because a thread could be created, but not run until later, and we want the first event to be scheduled based on when the thread is run. Then we want to sleep until @self.evt_time@. Also remember that other threads will be changing @self.evt_time@ and @self.interval@ when they are rescheduling the @Timer@, so we will need to synchronize access to those variables.
 
 {% highlight python %}
 def reschedule(self, interval):
@@ -106,9 +106,9 @@ def reschedule(self, interval):
         self.cond.release()
 {% endhighlight %}
 
-It's important that the @Timer@ thread is waiting on a condition variable. With the @threading.Timer@ implementation, we had problems changing the interval, because it involved canceling the current timer and starting a new one. In this model, where the @Timer@ is a thread, and is waiting on @self.cond@, so we can just notify the timer thread, and it will recalculate how long to sleep.
+It's important that the @Timer@ thread is waiting on a condition variable. With the @threading.Timer@ implementation, we had problems changing the interval, because it involved canceling the current timer and starting a new one. In this model, the @Timer@ is a thread and is waiting on @self.cond@, so we can just notify the timer thread, and it will recalculate how long to sleep.
 
-The only additional method we need to support is to restart the @Timer@. This operation is useful for Tetris, because after performing a hard drop, we want the player to have the entire interval to position the Tetromino, not the amount of time left before the next fall event. This method is very similar to @reschedule@, but we do not have to change @interval@. 
+The only additional method we need to support is to restart the @Timer@. This operation is useful for Tetris, because after performing a hard drop, we want the player to have the entire interval to position the Tetromino, not the amount of time left before the next event. This method is very similar to @reschedule@, but we do not have to change @interval@. 
 
 {% highlight python %}
 def restart(self):
@@ -117,5 +117,7 @@ def restart(self):
         self.evt_time = time.time() + self.interval
         self.lock.release()
 {% endhighlight %}
+
+We do not need to notify the sleeping thread because since we are not changing @self.interval@, the thread is already scheduled to wake up before @self.evt_time@. There is no advantage to forcing the thread to wake up when @restart@ is called.
 
 @Timer@ is a thread safe class that will call a function at a given interval. We will use @Timer@ to signal fall events in Tetris.
