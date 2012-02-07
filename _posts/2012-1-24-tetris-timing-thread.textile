@@ -7,7 +7,7 @@ h1. {{ page.title }}
 
 24 Jan 2012
 
-Previously, we defined the "Tetromino representation":../../1/11/tetromino-representation.html we are going to use when writing our Tetris game. Ultimately, we are going to have Tetris running inside a GUI framework. GUI frameworks have their own main loops, so we will need an external timing thread to create the signals that indicate when the Tetrominos should fall.
+Previously, we defined the "Tetromino representation":../../01/11/tetromino-representation.html we are going to use when writing our Tetris game. Ultimately, we are going to have Tetris running inside a GUI framework. GUI frameworks have their own main loops, so we will need an external timing thread to create the signals that indicate when the Tetrominos should fall.
 
 h3. Overall Strategy
 
@@ -52,7 +52,7 @@ But this creates a race condition. First the active timer creates a new @Timer@ 
 
 h3. threading.Thread implementation
 
-To fix this problem we need to rework rescheduling. And to make it easier, we are going to move away from using @threading.Timer@, and subclass @threading.Thread@ instead. Our @Timer@ will be a single thread that sleeps while it is waiting, and is woken up when it is rescheduled. 
+To fix this problem we need to rework @reschedule@. And to make it easier, we are going to move away from using @threading.Timer@, and subclass @threading.Thread@ instead. Our @Timer@ will be a single thread that sleeps while it is waiting, and is woken up when it is rescheduled. 
 
 {% highlight python %}
 class Timer(threading.Thread):

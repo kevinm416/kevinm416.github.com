@@ -7,6 +7,7 @@
 .highlight .mh { color: #a381ff } /* Literal.Number.Hex */
 .highlight .mi { color: #a381ff } /* Literal.Number.Integer */
 .highlight .mo { color: #a381ff } /* Literal.Number.Oct */
+.highlight .s  { color: #e6db74 } /* String literal */
 
 .highlight .go .k  { color: #f92672 } /* keywords */
 .highlight .go .nb { color: #66d9ef } /* types */
