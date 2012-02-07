@@ -8,7 +8,7 @@ h1. {{ page.title }}
 
 11 Jan 2013
 
-As part of a longer series centered around building Tetris in Python, we are going to first implement Tetrominos. To see the code in its entirety, see "tetris":https://github.com/kevinm416/tetris.
+As part of a longer series centered around building Tetris in Python, we are going to first implement Tetrominos. To see the code in its entirety, see "here":https://github.com/kevinm416/kevinm416.github.com/tree/master/code/tetris.
 
 h3. Overall Strategy
 

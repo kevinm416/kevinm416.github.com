@@ -9,7 +9,7 @@ title: Solving Sudoku With Go
 
 A game of Sudoku requires that we satisfy the constraints that every row, column, and 3x3 section contains the digits 1-9. We can approach finding the solution to an instance of a Sudoku puzzle as a search problem. 
 
-For the uninterrupted code, see [sudoku-golang](http://www.github.com/kevinm416/sudoku-golang).
+For the uninterrupted code, see [my repository](http://github.com/kevinm416/kevinm416.github.com/tree/master/code/sudoku).
 
 ### Overall Strategy
 
@@ -229,4 +229,4 @@ func Solve(puzzle *puzzleState) (slnState *puzzleState, ok bool) {
 }
 {% endhighlight %}
 
-To see the full, working code, take a look at [sudoku-golang](http://www.github.com/kevinm416/sudoku-golang) on Github. 
+To see the full, working code, take a look at [my repository](http://www.github.com/kevinm416/sudoku-golang) on Github. 
