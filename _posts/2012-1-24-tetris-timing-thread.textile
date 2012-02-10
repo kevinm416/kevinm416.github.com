@@ -7,7 +7,7 @@ h1. {{ page.title }}
 
 24 Jan 2012
 
-Previously, we defined the "Tetromino representation":../../01/11/tetromino-representation.html we are going to use when writing our Tetris game. Ultimately, we are going to have Tetris running inside a GUI framework. GUI frameworks have their own main loops, so we will need an external timing thread to create the signals that indicate when the Tetrominos should fall. To see how it is used, look at the Tetris "source":https://github.com/kevinm416/kevinm416.github.com/tree/master/code/tetris.
+Previously, we defined the "Tetromino representation":../../01/11/tetromino-representation.html we are going to use when writing our Tetris game. Ultimately, we are going to have Tetris running "inside a GUI framework":../../02/06/tetris-as-an-exercise-in-multithreaded-programming.html. GUI frameworks have their own main loops, so we will need an external timing thread to create the signals that indicate when the Tetrominos should fall. To see how it is used, look at the Tetris "source":https://github.com/kevinm416/kevinm416.github.com/tree/master/code/tetris/tetris.py.
 
 h3. Overall Strategy
 

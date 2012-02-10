@@ -3,7 +3,6 @@ import logging as log
 import random
 import time
 import threading
-import yappi
 
 log.basicConfig(format='%(asctime)s %(filename)s:%(lineno)-3d %(message)s', level=log.DEBUG)
 
@@ -133,6 +132,10 @@ class Tetris(wx.Frame):
         self.next_block = self.block_src.next()
         self.paused = False
         self.game_over = False
+
+        self.fall_hard_available = True
+        self.used_positions = [[None]*Tetris.COLUMNS for i in xrange(Tetris.ROWS)]
+        self.open_count = [Tetris.COLUMNS] * Tetris.ROWS
         
         self.next_block_panel = wx.Panel(self, wx.ID_ANY, 
                                 size=(4*Tetris.BLOCK_SIZE, 4*Tetris.BLOCK_SIZE))
@@ -145,10 +148,6 @@ class Tetris(wx.Frame):
 
         self.lines = 0
         self.lines_text = wx.StaticText(self, wx.ID_ANY, "Lines: %s" % self.lines)
-
-        self.fall_hard_available = True
-        self.used_positions = [[None]*Tetris.COLUMNS for i in xrange(Tetris.ROWS)]
-        self.used_count = [Tetris.COLUMNS] * Tetris.ROWS
         
         self.sizer = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -187,10 +186,10 @@ class Tetris(wx.Frame):
         self.panel.Bind(wx.EVT_CHAR, self.OnKeyDown)
         self.Show(True)
 
-        self.timer = Timer(self.fall_interval, self.OnTimer)
+        self.timer = Timer(self.fall_interval, self.Fall)
         self.timer.start()
-        wx.CallAfter(self.Paint)
-        wx.CallAfter(self.PaintNextBlock)
+        self.Paint()
+        self.PaintNextBlock()
     
     def reset(self):
         self.paused = False
@@ -199,7 +198,7 @@ class Tetris(wx.Frame):
         self.timer.restart()
         self.fall_hard_available = True
         self.used_positions = [[None]*Tetris.COLUMNS for i in xrange(Tetris.ROWS)]
-        self.used_count = [Tetris.COLUMNS] * Tetris.ROWS
+        self.open_count = [Tetris.COLUMNS] * Tetris.ROWS
         self.level = 0
         self.level_text.SetLabel("Level: %s" % self.level)
         self.score = 0
@@ -208,17 +207,6 @@ class Tetris(wx.Frame):
         self.lines_text.SetLabel("Score: %s" % self.lines)
         self.falling_block = self.next_block
         self.next_block = self.block_src.next()
-
-    def OnTimer(self):
-        s = time.time()
-        log.debug("main start, interval: %s" % self.fall_interval)
-        self.move_lock.acquire()
-        self.Fall()
-        self.move_lock.release()
-        e = time.time()
-        log.debug("main end, took: %s" % (e- s))
-
-        self.fall_hard_available = True
 
     def OnAbout(self, e):
         dlg = wx.MessageDialog(self, 
@@ -289,7 +277,7 @@ p - Pause""",
         dest_dc.Blit(0, 0, Tetris.BOARD_SIZE[0], Tetris.BOARD_SIZE[1],
                      dc, 0, 0)
     
-    def OnKeyDown(self, event=None):
+    def OnKeyDown(self, event):
         key_code = event.GetKeyCode()
         new_block = None
         rotation = False
@@ -302,13 +290,11 @@ p - Pause""",
         elif key_code == wx.WXK_RETURN:
             log.debug("Hard fall")
             if self.fall_hard_available:
-                interval = time.time()
                 self.move_lock.acquire()
                 new_block = self.falling_block.fall()
                 while self.AttemptMove(new_block, False):
                     new_block = new_block.fall()
                 self.move_lock.release()
-                interval = time.time() - interval
                 self.timer.restart()
                 self.fall_hard_available = False
         elif key_code == wx.WXK_SPACE:
@@ -323,7 +309,7 @@ p - Pause""",
             new_block = self.falling_block.rotate_right()
             rotation = True
         elif key_code == wx.WXK_ESCAPE:
-            wx.CallAfter(self.OnExit)
+            self.OnExit()
         elif key_code == ord('r'):
             self.reset()
         elif key_code == ord('p'):
@@ -369,20 +355,23 @@ p - Pause""",
         return success
 
     def Fall(self):
+        log.debug("fall start, interval: %s" % self.fall_interval)
+        s = time.time()
+        self.move_lock.acquire()
         # try to fall, if not possible then we hit the ground
         fall_block = self.falling_block.fall()
         if not self.AttemptMove(fall_block, False):
             rows_cleared = 0
             positions = list(self.falling_block.absolute_positions())
             for (i, j) in positions:
-                self.used_count[i] -= 1
+                self.open_count[i] -= 1
                 self.used_positions[i][j] = fall_block.color
             
             positions.sort(key=lambda p: p[0], reverse=False) # sort by row descending
             for (i, j) in positions:
-                if self.used_count[i] == 0:
+                if self.open_count[i] == 0:
                     self.used_positions = [[None]*Tetris.COLUMNS] + self.used_positions[0:i] + self.used_positions[i+1:]
-                    self.used_count = [Tetris.COLUMNS] + self.used_count[0:i] + self.used_count[i+1:]
+                    self.open_count = [Tetris.COLUMNS] + self.open_count[0:i] + self.open_count[i+1:]
                     rows_cleared += 1
 
             if rows_cleared > 0:
@@ -408,10 +397,15 @@ p - Pause""",
 
         # Update the graphics after the move
         wx.CallAfter(self.Paint)
+        self.fall_hard_available = True
+
+        self.move_lock.release()
+        e = time.time()
+        log.debug("fall end, took: %s" % (e- s))
 
     def print_board(self):
         for i in xrange(len(self.used_positions)):
-            print "%2s " % self.used_count[i],
+            print "%2s " % self.open_count[i],
             for j in xrange(len(self.used_positions[i])):
                 if self.used_positions[i][j]:
                     print "X",
@@ -420,12 +414,8 @@ p - Pause""",
             print
  
 if __name__ == '__main__':
-    #yappi.start()
-
     app = wx.App(False)
     gui = Tetris(None, "tetris")
     gui.Show()
     log.debug("starting gui")
     app.MainLoop()
-
-    #yappi.print_stats()
