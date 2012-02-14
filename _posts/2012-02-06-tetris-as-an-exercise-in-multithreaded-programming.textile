@@ -85,11 +85,12 @@ You may have noticed that @wx.EVT_CHAR@ is bound to @self.panel@ instead of @sel
 
 h3. Close Events
 
-When we get an event of type @wx.EVT_CLOSE@ we need to signal to the timing thread that it's time to stop, and then wait for it to finish. Otherwise the timing thread would try to call @Tetris.Fall@ after the @Tetris@ instance had been destroyed. After joining we can safely close the game.
+When we get an event of type @wx.EVT_CLOSE@ we need to signal to the timing thread that it's time to stop, and then wait for it to finish. Remember that our @Timer@ implementation allows us to pause it, so we neet to unpause it before exiting. After joining we can safely close the game. If we did not join with the timer thread, it could try to call @Tetris.Fall@ after the @Tetris@ instance had been destroyed.
 
 {% highlight python %}
     def OnClose(self, e):
         self.timer.cancel()
+        self.timer.restart()
         self.timer.join()
         e.Skip()
 {% endhighlight %}

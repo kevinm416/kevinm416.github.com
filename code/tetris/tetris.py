@@ -231,6 +231,7 @@ p - Pause""",
     def OnClose(self, e):
         log.debug("OnClose event, timer canceled")
         self.timer.cancel()
+        self.timer.restart()
         self.timer.join()
         e.Skip()
     
