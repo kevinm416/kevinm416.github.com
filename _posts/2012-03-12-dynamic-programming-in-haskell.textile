@@ -1,0 +1,85 @@
+---
+layout: post
+title: Dynamic Programming In Haskell
+math: true
+---
+
+h1. {{ page.title }}
+
+This post will discuss the solutions to two dynamic programming problems in Haskell. Source code for these two problems is available "here":https://github.com/kevinm416/kevinm416.github.com/tree/master/code/dynamic.
+
+h3. Maximum Sum Traveling from the Top to Base of a Pyramid
+
+We are given a string of space delimited numbers, where each line contains one more number than the previous line. Conceptually, this input forms a pyramid:
+
+{% highlight text %}
+    1
+   2 3
+  4 5 6
+ 7 8 9 10
+{% endhighlight %}
+
+The goal is to find the maximum value of a path from the top to the bottom of the pyramid, where the value of a path is the sum of the nodes visited along the way. The restriction on movement for the path is that if we are at the ==\(i^{th}\)== number in a row, we can only move to numbers at positions ==\(i\)== and ==\(i+1\)== in the next row. Such a transition should seem intuitive from looking at the pyramid of numbers above. 
+
+A naive but correct solution is to enumerate all possible paths from top to bottom. However, if we think about the paths we are computing while doing that search, we will realize they require recomputing the same subproblem multiple times. For example when we travel along @1->2->5->8@ and @1->3->5->8@, we recompute half the path the second time. Needing to recompute a subproblem is often a sign that a better, dynamic programming solution exists.
+
+In this case we will use the invariant that the maximum path from a node to the bottom of the pyramid is the value of that node plus larger of the maximum paths to the nodes below it. The base case in this definition is the nodes at the bottom of the pyramid, which have no nodes to which a path can continue. The base nodes' maximum paths are just their values. From there we can find the lengths of maximum paths at next highest row by adding each node's value to the larger of its two options to continue the path.
+
+{% highlight haskell %}
+findPath :: (Num a, Ord a) => [[a]] -> a
+findPath (l1 : l2 : ls) = findPath $ (reduceRow l1 l2) : ls
+findPath (l : []) = head l
+
+reduceRow :: (Num a, Ord a) => [a] -> [a] -> [a]
+reduceRow (x1 : x2 : xs) (z : zs) = (max x1 x2) + z : reduceRow (x2 : xs) zs
+reduceRow _ _ = []
+{% endhighlight %}
+
+In the code above, @reduceRow@ executes the procedure we described above. Given a row of maximum paths and the row of values above that, it constructs a row of maximum paths up to the higher row. The row of maximum paths returned by @reduceRow@ will then be paired with the next row of values by the @findPath@ function. @findPath@ will keep combining rows, until there is only one row left. At that point, we have the maximum path from the top to the bottom of the pyramid.
+
+Note that these functions work when the pyramid inverted. It is easier to write the code when the pyramid is inverted, because the base case for computing the maximum paths occurs at the base of the pyramid.
+
+Now we just need to read and parse a file in the proper format, then pass the @[[Int]]@ list to @findPath@. 
+
+{% highlight haskell %}
+import Data.String.Utils
+
+main = do
+    file <- readFile "path/to/pyramid.txt"
+    let tiers = reverse . map (replace " " ",") $ lines file
+        nums = map (\x -> read $ "[" ++ x ++ "]") tiers :: [[Integer]]
+    print $ findPath nums
+{% endhighlight %}
+
+h3. Longest Increasing Subsequence
+
+The task of finding the length of the longest increasing subsequence in a list has a well known dynamic programming solution, but the interesting part here is how we implement it in Haskell. 
+
+Let us call the input array ==\(a\)==, and let us construct another array, say ==\(q\)==, such that ==\(q[i]\)== is the longest increasing subsequence of ==\(a\)== that ends at its ==\(i^{th}\)== position. There is a straightforward recurrence to find ==\(q[i]\)== given ==\(q[j] ~ \forall ~ j < i\)==: 
+
+==\[
+  q[i] = 1 + max(q[j] \mid a[j] < a[i], j < i)
+\]==
+
+Or translated: we can extend by one the longest increasing subsequence that ends on a value less than the current value. And now we translate it again, but this time into code.
+
+{% highlight haskell %}
+nextQ :: (Num a, Ord a) => [a] -> [a] -> a
+nextQ a q = 1 + (snd $ argmax snd $ filtered)
+    where aMax = last a
+          filtered = (aMax, 0) : (filter (\x -> fst x < aMax) $ zip (init a) q)
+{% endhighlight %}
+
+We first filter out all ==\(a[j] ~ s.t. ~ a[j] < a[i]\)==. Then we select the maximal ==\(q[j]\)==. The return value is one more than the maximal value, since we are adding the current ==\(a[i]\)== to the sequence. The tuple @(aMax, 0)@ needs to be added to filtered, because if ==\(\nexists a[j] < a[i]\)== then we will be starting a new sequence from the current ==\(a[i]\)==.
+
+Now we need to run @nextQ@ on each prefix of ==\(a\)==, and append all the resulting ==\(q\)=='s together. The last value in ==\(q\)== will be the longest increasing subsequence of the entire list.
+
+{% highlight haskell %}
+incSubSeq :: (Num a, Ord a) => [a] -> [a]
+incSubSeq [] = error "Empty List"
+incSubSeq lst = last $ foldl l [1] intermediates
+    where intermediates = drop 2 (inits lst)
+          l q a = q ++ [nextQ a q]
+{% endhighlight %}
+
+The only code here that might be unfamiliar is @inits@, which returns all prefixes of a string. We @drop@ the first two items because the first item is the empty string, and the second is a one element list, which is our base case with value 1. 

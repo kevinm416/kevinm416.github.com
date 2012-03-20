@@ -9,6 +9,13 @@
 .highlight .mo { color: #a381ff } /* Literal.Number.Oct */
 .highlight .s  { color: #e6db74 } /* String literal */
 
+/*Haskell*/
+.highlight .o  { color: #F92672 }
+.highlight .ow { color: #F92672 } /* operator? */
+.highlight .kt { color: #66d9ef } /* key term? */
+.highlight .kr { color: #F92672 }
+
+
 .highlight .go .k  { color: #f92672 } /* keywords */
 .highlight .go .nb { color: #66d9ef } /* types */
 .highlight .go .sc { color: #a381ff } /* chars */
