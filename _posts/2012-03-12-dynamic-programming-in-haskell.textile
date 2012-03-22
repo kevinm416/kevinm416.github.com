@@ -6,7 +6,7 @@ math: true
 
 h1. {{ page.title }}
 
-This post will discuss the solutions to two dynamic programming problems in Haskell. Source code for these two problems is available "here":https://github.com/kevinm416/kevinm416.github.com/tree/master/code/dynamic.
+This post will discuss the solutions to three dynamic programming problems in Haskell. Source code for these three problems is available "here":https://github.com/kevinm416/kevinm416.github.com/tree/master/code/dynamic.
 
 h3. Maximum Sum Traveling from the Top to Base of a Pyramid
 
@@ -64,6 +64,8 @@ Let us call the input array ==\(a\)==, and let us construct another array, say =
 Or translated: we can extend by one the longest increasing subsequence that ends on a value less than the current value. And now we translate it again, but this time into code.
 
 {% highlight haskell %}
+import Data.List.Extras.Argmax (argmax)
+
 nextQ :: (Num a, Ord a) => [a] -> [a] -> a
 nextQ a q = 1 + (snd $ argmax snd $ filtered)
     where aMax = last a
@@ -75,6 +77,8 @@ We first filter out all ==\(a[j] ~ s.t. ~ a[j] < a[i]\)==. Then we select the ma
 Now we need to run @nextQ@ on each prefix of ==\(a\)==, and append all the resulting ==\(q\)=='s together. The last value in ==\(q\)== will be the longest increasing subsequence of the entire list.
 
 {% highlight haskell %}
+import Data.List (inits)
+
 incSubSeq :: (Num a, Ord a) => [a] -> [a]
 incSubSeq [] = error "Empty List"
 incSubSeq lst = last $ foldl l [1] intermediates
@@ -83,3 +87,64 @@ incSubSeq lst = last $ foldl l [1] intermediates
 {% endhighlight %}
 
 The only code here that might be unfamiliar is @inits@, which returns all prefixes of a string. We @drop@ the first two items because the first item is the empty string, and the second is a one element list, which is our base case with value 1. 
+
+h3. Edit Distance
+
+The edit distance between two strings is the minimum number of insertion, deletion, or substitution operations to turn one string into another. For example to turn @Saturday@ into @Sunday@ we delete @at@ and then substitute @r@ for @n@ in @Saturday@, giving an edit distance of 3.
+
+{% highlight text %}
+S a t u r d a y
+S - - u n d a y
+{% endhighlight %}
+
+Let ==\(edit\)== be a two-dimensional array such that ==\(edit[i][j]\)== is the edit distance between the first ==\(i\)== letters of ==\(s\)== and the first ==\(j\)== letters of ==\(t\)==. When trying to find the edit distance between ==\(s[0 \dots i]\)== and ==\(t[0 \dots j]\)==, we use a recurrence containing three subproblems. If the last operation was an deletion, the edit distance is one plus the edit distance between ==\(s[0 \dots i]\)== and ==\(t[0 \dots j-1]\)==. If the last operation was an insertion, the edit distance is one plus the edit distance between ==\(s[0 \dots i-1]\)== and ==\(t\)==. And if the last operation was a substitution, then the new edit distance is the edit distance between ==\(s[0..i-1]\)== and ==\(t[0 \dots j-1]\)== plus 1 if ==\(a \neq b\)== and 0 otherwise. The value of ==\(edit[i][j]\)== must be the minimum of those three options.
+
+\[
+  \begin{align*}
+    penalty &= \begin{cases} 0 ~ if ~ a = b \\ 1 ~ otherwise \end{cases} \\
+    edit(i, j) &= min \begin{cases} edit(i, j-1) + 1 \\ edit(i-1, j) + 1 \\ edit(i-1, j-1) + penalty \end{cases}
+  \end{align*} 
+\]
+
+Let us write the code for this recurrence assuming we have the map @edit@ from @(Int, Int)@ to @Int@ representing the edit distances. 
+
+{% highlight haskell %}
+import qualified Data.Map as M
+
+recurrence :: (Eq a) => a -> a -> Int -> Int -> M.Map (Int, Int) Int -> Int
+recurrence c1 c2 i j edit = 
+    let subProb1 = edit M.! (i, j-1) + 1
+        subProb2 = edit M.! (i-1, j) + 1
+        subProb3 = edit M.! (i-1, j-1) + if c1 == c2 then 0 else 1 
+        in minimum [subProb1, subProb2, subProb3]
+{% endhighlight %}
+
+All we needed to do was look up the three subproblems, and take the value of the subproblem that minimized the edit distance to the current position.
+
+Combine that with the following base cases, and we have completely described the edit distance algorithm. These bases cases are straightforward; to turn the empty string into another string, we need to insert each character in the other string, or to turn a string into the empty string, we need to delete each character in that string.
+
+\[
+  \begin{align*}
+    edit(0, j) &= j \\ edit(i, 0) &= i
+  \end{align*}
+\]
+
+We will add these base cases to the map @edit@, and then begin calculating intermediate edit distances so that we will be able to find ==\(edit[w1.length, w2.length]\)==.
+
+{% highlight haskell %}
+import qualified Data.Array.IArray as A
+
+editDistance :: (Eq a) => A.Array Int a -> A.Array Int a -> Int
+editDistance w1 w2 = 
+    let (_, l1) = A.bounds w1
+        (_, l2) = A.bounds w2
+        baseCases = [((i, 0), i) | i <- [0..l1]] ++ 
+                    [((0, j), j) | j <- [0..l2]]
+        indices = [(i, j) | i <- [1..l1], j <- [1..l2]]
+        table = foldl (\m (k, v) -> M.insert k v m) M.empty baseCases
+        edit = foldl ins table indices
+        in edit M.! (l1, l2)
+    where ins m k@(i, j) = M.insert k (recurrence (w1 A.! i) (w2 A.! j) i j m) m
+{% endhighlight %}
+
+If ==\(l = w1.length\)== and ==\(m = w2.length\)==, this algorithm requires filling in a table with ==\(lm\)== entries. Each of those indices in the table requires a call to @recurrence@. Haskell's array classes provide us with ==\(O(1)\)== time access to the characters in the input words. However, Haskell's maps have ==\(O(log(n))\)== insert and lookup times, so each call to @recurrence@ takes ==\(O(log(lm))\)== time. The overall runtime is therefore ==\(O(lm ~ log(lm))\)==. This runtime could be reduced by using a more efficient data structure for ==\(edit\)==, such as a mutable array. However, this approach is very straightforward.
