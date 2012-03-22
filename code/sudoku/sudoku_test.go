@@ -127,7 +127,6 @@ func TestPuzzleState2(t *testing.T) {
         800203009
         005010300`)
     assertPuzzlesEqual(correct, ps, t)
-    logger.Println("t1\n", ps)
 }
 
 func TestInvalidPuzzle(t *testing.T) {
@@ -245,15 +244,15 @@ func TestSolveEasy(t *testing.T) {
         .....2.......7...17..3...9.8..7......2.89.6...13..6....9..5.824.....891..........
         3...8.......7....51..............36...2..4....7...........6.13..452...........8..`,
         "\n")
-    start := time.Now()
+    start := time.Nanoseconds()
     for i := 0; i < len(puzzles); i++ {
         ps := NewPuzzleState(puzzles[i])
         if sln, ok := Solve(ps); !ok {
             t.Errorf("Start state:\n%v\nSolution state: %v", puzzles[i], sln)
         }
     }
-    end := time.Now()
-    fmt.Println("Easy puzzles avg time:", end.Sub(start).Seconds()/float64(len(puzzles)))
+    end := time.Nanoseconds()
+    fmt.Println("Easy puzzles avg time:", float64(end - start)/10e9/float64(len(puzzles)))
 }
 
 func TestSolveHard(t *testing.T) {
@@ -354,15 +353,15 @@ func TestSolveHard(t *testing.T) {
         .....2.......7...17..3...9.8..7......2.89.6...13..6....9..5.824.....891..........
         3...8.......7....51..............36...2..4....7...........6.13..452...........8..`,
         "\n")
-    start := time.Now()
+    start := time.Nanoseconds()
     for i := 0; i < len(puzzles); i++ {
         ps := NewPuzzleState(puzzles[i])
         if sln, ok := Solve(ps); !ok {
             t.Errorf("Start state:\n%v\nSolution state: %v", puzzles[i], sln)
         }
     }
-    end := time.Now()
-    fmt.Println("Hard puzzles avg time:", end.Sub(start).Seconds()/float64(len(puzzles)))
+    end := time.Nanoseconds()
+    fmt.Println("Hard puzzles avg time:", float64(end - start)/10e9/float64(len(puzzles)))
 }
 
 func TestSolveHardest(t *testing.T) {
@@ -379,19 +378,19 @@ func TestSolveHardest(t *testing.T) {
         7.....4...2..7..8...3..8.799..5..3...6..2..9...1.97..6...3..9...3..4..6...9..1.35
         ....7..2.8.......6.1.2.5...9.54....8.........3....85.1...3.2.8.4.......9.7..6....`,
         "\n")
-    start := time.Now()
+    start := time.Nanoseconds()
     for i := 0; i < len(puzzles); i++ {
         ps := NewPuzzleState(puzzles[i])
         if sln, ok := Solve(ps); !ok {
             t.Errorf("Start state:\n%v\nSolution state: %v", puzzles[i], sln)
         }
     }
-    end := time.Now()
-    fmt.Println("Hardest puzzles avg time:", end.Sub(start).Seconds()/float64(len(puzzles)), "sec")
+    end := time.Nanoseconds()
+    fmt.Println("Hardest puzzles avg time:", float64(end - start)/10e9/float64(len(puzzles)))
 }
 
 // func TestLong(t *testing.T) {
-//     start := time.Now()
+//     start := time.UTC()
 //     ps := NewPuzzleState(
 //        `.....5.8.
 //         ...6.1.43
@@ -406,6 +405,6 @@ func TestSolveHardest(t *testing.T) {
 //     if !ok {
 //         t.Errorf("Returned a solution to an invalid puzzle")
 //     }
-//     end := time.Now()
+//     end := time.UTC()
 //     fmt.Println("Longest puzzle time:", end.Sub(start), "sec")
 // }
