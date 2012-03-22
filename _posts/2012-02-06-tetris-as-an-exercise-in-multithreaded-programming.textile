@@ -266,4 +266,4 @@ If the block that we just assigned to @self.next_block@ is not in a valid positi
 
 h3. Conclusion
 
-Because the code was somewhat long, it did not seem worthwhile to go through absolutely everything. As a result, some pieces are not completely tied up. For example, @self.timer@ is never unpaused after a game over. To see a complete implementation, with some extra features not covered here, look "here":https://github.com/kevinm416/kevinm416.github.com/blob/master/code/tetris/tetris.py 
+Because the code was somewhat long, it did not seem worthwhile to go through absolutely everything. As a result, some pieces are not completely tied up. For example, @self.timer@ is never unpaused after a game over. To see a complete implementation, with some extra features not covered here, look "here":https://github.com/kevinm416/kevinm416.github.com/blob/master/code/tetris/tetris.py.
