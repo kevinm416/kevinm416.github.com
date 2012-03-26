@@ -23,7 +23,7 @@ The goal is to find the maximum value of a path from the top to the bottom of th
 
 A naive but correct solution is to enumerate all possible paths from top to bottom. However, if we think about the paths we are computing while doing that search, we will realize they require recomputing the same subproblem multiple times. For example when we travel along @1->2->5->8@ and @1->3->5->8@, we recompute half the path the second time. Needing to recompute a subproblem is often a sign that a better, dynamic programming solution exists.
 
-In this case we will use the invariant that the maximum path from a node to the bottom of the pyramid is the value of that node plus larger of the maximum paths to the nodes below it. The base case in this definition is the nodes at the bottom of the pyramid, which have no nodes to which a path can continue. The base nodes' maximum paths are just their values. From there we can find the lengths of maximum paths at next highest row by adding each node's value to the larger of its two options to continue the path.
+In this case we will use the invariant that the maximum path from a node to the bottom of the pyramid is the value of that node plus the larger of the maximum paths to the nodes below it. The base case in this definition is the nodes at the bottom of the pyramid, which have no nodes to which a path can continue. The base nodes' maximum paths are just their values. From there we can find the lengths of maximum paths at next highest row by adding each node's value to the larger of its two options to continue the path.
 
 {% highlight haskell %}
 findPath :: (Num a, Ord a) => [[a]] -> a
@@ -72,7 +72,7 @@ nextQ a q = 1 + (snd $ argmax snd $ filtered)
           filtered = (aMax, 0) : (filter (\x -> fst x < aMax) $ zip (init a) q)
 {% endhighlight %}
 
-We first filter out all ==\(a[j] ~ s.t. ~ a[j] < a[i]\)==. Then we select the maximal ==\(q[j]\)==. The return value is one more than the maximal value, since we are adding the current ==\(a[i]\)== to the sequence. The tuple @(aMax, 0)@ needs to be added to filtered, because if ==\(\nexists a[j] < a[i]\)== then we will be starting a new sequence from the current ==\(a[i]\)==.
+We first filter out all ==\(a[j] ~ s.t. ~ a[j] < a[i]\)==. Then we select the maximal ==\(q[j]\)==. The return value is one more than the maximal value, since we are adding the current ==\(a[i]\)== to the sequence. The tuple @(aMax, 0)@ needs to be added to filtered, because if ==\(\nexists j ~s.t.~ a[j] < a[i], j < i\)== then we will be starting a new sequence from the current ==\(a[i]\)==.
 
 Now we need to run @nextQ@ on each prefix of ==\(a\)==, and append all the resulting ==\(q\)=='s together. The last value in ==\(q\)== will be the longest increasing subsequence of the entire list.
 
@@ -97,7 +97,7 @@ S a t u r d a y
 S - - u n d a y
 {% endhighlight %}
 
-Let ==\(edit\)== be a two-dimensional array such that ==\(edit[i][j]\)== is the edit distance between the first ==\(i\)== letters of ==\(s\)== and the first ==\(j\)== letters of ==\(t\)==. When trying to find the edit distance between ==\(s[0 \dots i]\)== and ==\(t[0 \dots j]\)==, we use a recurrence containing three subproblems. If the last operation was an deletion, the edit distance is one plus the edit distance between ==\(s[0 \dots i]\)== and ==\(t[0 \dots j-1]\)==. If the last operation was an insertion, the edit distance is one plus the edit distance between ==\(s[0 \dots i-1]\)== and ==\(t\)==. And if the last operation was a substitution, then the new edit distance is the edit distance between ==\(s[0..i-1]\)== and ==\(t[0 \dots j-1]\)== plus 1 if ==\(a \neq b\)== and 0 otherwise. The value of ==\(edit[i][j]\)== must be the minimum of those three options.
+Let ==\(edit\)== be a two-dimensional array such that ==\(edit[i][j]\)== is the edit distance between the first ==\(i\)== letters of ==\(s\)== and the first ==\(j\)== letters of ==\(t\)==. When trying to find the edit distance between ==\(s[0 \dots i]\)== and ==\(t[0 \dots j]\)==, we use a recurrence containing three subproblems. If the last operation was an deletion, the edit distance is one plus the edit distance between ==\(s[0 \dots i]\)== and ==\(t[0 \dots j-1]\)==. If the last operation was an insertion, the edit distance is one plus the edit distance between ==\(s[0 \dots i-1]\)== and ==\(t\)==. And if the last operation was a substitution, then the new edit distance is the edit distance between ==\(s[0..i-1]\)== and ==\(t[0 \dots j-1]\)== plus 1 if ==\(a \neq b\)== and 0 otherwise. The value of ==\(edit[i][j]\)== is the minimum of those three options.
 
 \[
   \begin{align*}
@@ -147,4 +147,4 @@ editDistance w1 w2 =
     where ins m k@(i, j) = M.insert k (recurrence (w1 A.! i) (w2 A.! j) i j m) m
 {% endhighlight %}
 
-If ==\(l = w1.length\)== and ==\(m = w2.length\)==, this algorithm requires filling in a table with ==\(lm\)== entries. Each of those indices in the table requires a call to @recurrence@. Haskell's array classes provide us with ==\(O(1)\)== time access to the characters in the input words. However, Haskell's maps have ==\(O(log(n))\)== insert and lookup times, so each call to @recurrence@ takes ==\(O(log(lm))\)== time. The overall runtime is therefore ==\(O(lm ~ log(lm))\)==. This runtime could be reduced by using a more efficient data structure for ==\(edit\)==, such as a mutable array. However, this approach is very straightforward.
+If ==\(l = w1.length\)== and ==\(m = w2.length\)==, this algorithm requires filling in a table with ==\(lm\)== entries. Each of those indices in the table requires a call to @recurrence@. Haskell's array operations provide us with ==\(O(1)\)== time access to the characters in the input words. However, Haskell's maps have ==\(O(log(n))\)== insert and lookup times, so each call to @recurrence@ takes ==\(O(log(lm))\)== time. The overall runtime is therefore ==\(O(lm ~ log(lm))\)==. This runtime could be reduced by using a more efficient data structure for ==\(edit\)==, such as a mutable array. However, this approach was very straightforward.
