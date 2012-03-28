@@ -97,54 +97,63 @@ S a t u r d a y
 S - - u n d a y
 {% endhighlight %}
 
-Let ==\(edit\)== be a two-dimensional array such that ==\(edit[i][j]\)== is the edit distance between the first ==\(i\)== letters of ==\(s\)== and the first ==\(j\)== letters of ==\(t\)==. When trying to find the edit distance between ==\(s[0 \dots i]\)== and ==\(t[0 \dots j]\)==, we use a recurrence containing three subproblems. If the last operation was an deletion, the edit distance is one plus the edit distance between ==\(s[0 \dots i]\)== and ==\(t[0 \dots j-1]\)==. If the last operation was an insertion, the edit distance is one plus the edit distance between ==\(s[0 \dots i-1]\)== and ==\(t\)==. And if the last operation was a substitution, then the new edit distance is the edit distance between ==\(s[0..i-1]\)== and ==\(t[0 \dots j-1]\)== plus 1 if ==\(a \neq b\)== and 0 otherwise. The value of ==\(edit[i][j]\)== must be the minimum of those three options.
+Let ==\(edit\)== be a two-dimensional array such that ==\(edit[i][j]\)== is the edit distance between the first ==\(i\)== letters of ==\(s\)== and the first ==\(j\)== letters of ==\(t\)==. First we describe the base cases. To turn the empty string into another string, we need to insert each character in the other string, or to turn a string into the empty string, we need to delete each character in that string. We know what to do when given a string with length 0 as an argument.
 
 \[
   \begin{align*}
-    penalty &= \begin{cases} 0 ~ if ~ a = b \\ 1 ~ otherwise \end{cases} \\
-    edit(i, j) &= min \begin{cases} edit(i, j-1) + 1 \\ edit(i-1, j) + 1 \\ edit(i-1, j-1) + penalty \end{cases}
-  \end{align*} 
-\]
-
-Let us write the code for this recurrence assuming we have the map @edit@ from @(Int, Int)@ to @Int@ representing the edit distances. 
-
-{% highlight haskell %}
-import qualified Data.Map as M
-
-recurrence :: (Eq a) => a -> a -> Int -> Int -> M.Map (Int, Int) Int -> Int
-recurrence c1 c2 i j edit = 
-    let subProb1 = edit M.! (i, j-1) + 1
-        subProb2 = edit M.! (i-1, j) + 1
-        subProb3 = edit M.! (i-1, j-1) + if c1 == c2 then 0 else 1 
-        in minimum [subProb1, subProb2, subProb3]
-{% endhighlight %}
-
-All we needed to do was look up the three subproblems, and take the value of the subproblem that minimized the edit distance to the current position.
-
-Combine that with the following base cases, and we have completely described the edit distance algorithm. These bases cases are straightforward; to turn the empty string into another string, we need to insert each character in the other string, or to turn a string into the empty string, we need to delete each character in that string.
-
-\[
-  \begin{align*}
-    edit(0, j) &= j \\ edit(i, 0) &= i
+    edit(0, j) &= j \\ edit(i, 0) &= i \\
   \end{align*}
 \]
 
-We will add these base cases to the map @edit@, and then begin calculating intermediate edit distances so that we will be able to find ==\(edit[w1.length, w2.length]\)==.
+When trying to find the edit distance between ==\(s[0 \dots i]\)== and ==\(t[0 \dots j]\)==, we use a recurrence containing three subproblems. If the last operation was an deletion, the edit distance is one plus the edit distance between ==\(s[0 \dots i]\)== and ==\(t[0 \dots j-1]\)==. If the last operation was an insertion, the edit distance is one plus the edit distance between ==\(s[0 \dots i-1]\)== and ==\(t\)==. And if the last operation was a substitution, then the new edit distance is the edit distance between ==\(s[0..i-1]\)== and ==\(t[0 \dots j-1]\)== plus 1 if ==\(a \neq b\)== and 0 otherwise. The value of ==\(edit[i][j]\)== must be the minimum of those three options.
+
+\[
+  \begin{align*}
+    edit(i, j) &= min \begin{cases} edit(i, j-1) + 1 \\ edit(i-1, j) + 1 \\ edit(i-1, j-1) + penalty \end{cases} \\
+    penalty &= \begin{cases} 0 ~ if ~ a = b \\ 1 ~ otherwise \end{cases} \\
+  \end{align*} 
+\]
+
+Let us write the code for this recurrence assuming we have the array @edit@ representing the edit distances, and the strings to compare, @xs@ and @xy@.
 
 {% highlight haskell %}
-import qualified Data.Array.IArray as A
+import Data.Array.IArray
 
-editDistance :: (Eq a) => A.Array Int a -> A.Array Int a -> Int
-editDistance w1 w2 = 
-    let (_, l1) = A.bounds w1
-        (_, l2) = A.bounds w2
-        baseCases = [((i, 0), i) | i <- [0..l1]] ++ 
-                    [((0, j), j) | j <- [0..l2]]
-        indices = [(i, j) | i <- [1..l1], j <- [1..l2]]
-        table = foldl (\m (k, v) -> M.insert k v m) M.empty baseCases
-        edit = foldl ins table indices
-        in edit M.! (l1, l2)
-    where ins m k@(i, j) = M.insert k (recurrence (w1 A.! i) (w2 A.! j) i j m) m
+editDistance :: Eq a => Array Int a -> Array Int a -> Int
+editDistance s t = edit ! (x, y)
+    where recurrence :: (Int, Int) -> Int
+          recurrence (0, j) = j
+          recurrence (i, 0) = i
+          recurrence (i, j) = minimum [edit ! (i-1, j-1) + penalty,
+                                       edit ! (i-1, j) + 1,
+                                       edit ! (i, j-1) + 1]
+              where penalty = if (s ! i) == (t ! j) then 0 else 1
 {% endhighlight %}
 
-If ==\(l = w1.length\)== and ==\(m = w2.length\)==, this algorithm requires filling in a table with ==\(lm\)== entries. Each of those indices in the table requires a call to @recurrence@. Haskell's array classes provide us with ==\(O(1)\)== time access to the characters in the input words. However, Haskell's maps have ==\(O(log(n))\)== insert and lookup times, so each call to @recurrence@ takes ==\(O(log(lm))\)== time. The overall runtime is therefore ==\(O(lm ~ log(lm))\)==. This runtime could be reduced by using a more efficient data structure for ==\(edit\)==, such as a mutable array. However, this approach is very straightforward.
+The pattern matching in Haskell means that our mathematical definition maps almost exactly onto the code. All we needed to do was look up the three subproblems, and take the value of the subproblem that minimized the edit distance to the current position.
+
+Now we need to construct the array @edit@. As long as the three values at indices @(i-1,j)@, @(i, j-1)@ and @(i-1, j-1)@ are assigned the appropriate edit distances in @edit@, then @edit[i][j]@ is  @recurrence(i,j)@. If we iterate over the indices of @edit@ in Lexicographic order (==\((a,b)\le(c,d) \iff a < c \lor (a = c \land b \le d)\)==) we are guaranteed to have solved all the dependent subproblems before the current subproblem. The @range@ function will do exactly what we want in this case.
+
+{% highlight haskell %}
+          (_, x) = bounds s
+          (_, y) = bounds t
+          size = ((0,0), (x,y))
+
+          edit :: Array (Int, Int) Int
+          edit = array size [(coord, recurrence coord) | coord <- range size]
+{% endhighlight %}
+
+To run @editDistance@, we convert the input strings to arrays before calling @editDistance@.
+
+{% highlight haskell %}
+main = do
+    let w1 = "Saturday"
+        w2 = "Sunday"
+        a1 = listArray (1, length w1) w1
+        a2 = listArray (1, length w2) w2
+    print $ editDistance a1 a2
+{% endhighlight %}
+
+Now that we have completed coding the algorithm, we will look at its runtime. If ==\(l = length(s)\)== and ==\(m = length(t)\)==, this algorithm requires filling in a table with ==\(lm\)== entries. Each of those indices in the table requires a call to @recurrence@. Haskell's array classes provide us with ==\(O(1)\)== time access to the characters in the @xs@ and @ys@ as well as entries in @edit@. The overall runtime is therefore ==\(O(lm)\)==.
+
+

@@ -390,7 +390,7 @@ func TestSolveHardest(t *testing.T) {
 }
 
 // func TestLong(t *testing.T) {
-//     start := time.UTC()
+//     start := time.Nanoseconds()
 //     ps := NewPuzzleState(
 //        `.....5.8.
 //         ...6.1.43
@@ -405,6 +405,6 @@ func TestSolveHardest(t *testing.T) {
 //     if !ok {
 //         t.Errorf("Returned a solution to an invalid puzzle")
 //     }
-//     end := time.UTC()
-//     fmt.Println("Longest puzzle time:", end.Sub(start), "sec")
+//     end := time.Nanoseconds()
+//     fmt.Println("Longest puzzle time:", float64(end - start)/10e9)
 // }
