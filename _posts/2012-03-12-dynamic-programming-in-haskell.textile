@@ -97,7 +97,7 @@ S a t u r d a y
 S - - u n d a y
 {% endhighlight %}
 
-Let ==\(edit\)== be a two-dimensional array such that ==\(edit[i][j]\)== is the edit distance between the first ==\(i\)== letters of ==\(s\)== and the first ==\(j\)== letters of ==\(t\)==. First we describe the base cases. To turn the empty string into another string, we need to insert each character in the other string, or to turn a string into the empty string, we need to delete each character in that string. We know what to do when given a string with length 0 as an argument.
+Let ==\(edit\)== be a two-dimensional array such that ==\(edit[i][j]\)== is the edit distance between the first ==\(i\)== letters of ==\(s\)== and the first ==\(j\)== letters of ==\(t\)==. First we describe the base cases. To turn the empty string into another string, we need to insert each character from the other string, and to turn a string into the empty string, we need to delete each character in that string. 
 
 \[
   \begin{align*}
