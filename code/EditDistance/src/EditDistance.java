@@ -6,6 +6,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 public class EditDistance {
+	private static final int MIN_CHUNK_SIZE = 5;
 	private final ExecutorService threadPool;
 	private final int threadCount;
 	private final String maxStr;
@@ -41,19 +42,20 @@ public class EditDistance {
 			} else {
 				currentLen = iterations - i;
 			}
-			current = new int[currentLen];
-			parallelize(prev, current, i);
-			prev = combineDists(prev, current, i);
+			
+			current = new int[currentLen*2 - 1];
+			parallelize(prev, current, currentLen, i);
+			prev = current;
 		}
 		return current[0];
 	}
 
-	private void parallelize(int[] prev, int[] current, int iteration) {
-		int chunkSize = Math.max(current.length / threadCount, 1);
+	private void parallelize(int[] prev, int[] current, int currentLen, int iteration) {
+		int chunkSize = Math.max(current.length / threadCount, MIN_CHUNK_SIZE);
 		List<Future<?>> futures = new ArrayList<Future<?>>();
 		for (int i = 0; i < current.length; i += chunkSize) {
-			int stopIdx = Math.min(current.length, i + chunkSize);
-			Runnable worker = new Worker(prev, current, iteration, i, stopIdx);
+			int stopIdx = Math.min(currentLen, i + chunkSize);
+			Runnable worker = new Worker(prev, current, currentLen, iteration, i, stopIdx);
 			futures.add(threadPool.submit(worker));
 		}
 		for (Future<?> future : futures) {
@@ -63,18 +65,20 @@ public class EditDistance {
 					throw new RuntimeException(result.toString());
 				}
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				Thread.currentThread().interrupt();
 			} catch (ExecutionException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				// We can only finish the computation if we complete
+				// all subproblems
+				throw new RuntimeException(e);
 			}
 		}
-		
 	}
 	
-	private void doChunk(int[] prev, int[] current, int iteration, int startIdx, int stopIdx) {
+	private void doChunk(int[] prev, int[] current, int currentLen, int iteration, int startIdx, int stopIdx) {
+		int mergeStartIdx = (iteration < minLen) ? 0 : 2;
+		
 		for (int i = startIdx; i < stopIdx; i++) {
+			// Edit distance 
 			int x;
 			int y;
 			int leftIdx;
@@ -82,7 +86,7 @@ public class EditDistance {
 			int diagonalIdx;
 			if (iteration < minLen) {
 				x = i;
-				y = current.length - i - 1;
+				y = currentLen - i - 1;
 				leftIdx = i * 2 - 2;
 				downIdx = i * 2;
 				diagonalIdx = i * 2 - 1;
@@ -100,37 +104,14 @@ public class EditDistance {
 					+ ((diagonalIdx < 0 || diagonalIdx >= prev.length) ? iteration
 							: prev[diagonalIdx]);
 			int dist = Math.min(left, Math.min(down, diagonal));
-			current[i] = dist;
+			current[i*2] = dist;
+			
+			// Merge prev
+			int mergeIdx = i*2 + 1;
+			if (mergeIdx < current.length) {
+				current[mergeIdx] = prev[mergeStartIdx + i*2];
+			}
 		}
-	}
-
-	private int[] combineDists(int[] prev, int[] current, int iteration) {
-		int newLen = current.length * 2 - 1;
-		int[] ret = new int[newLen];
-		for (int i = 0; i < current.length; i++) {
-			ret[i * 2] = current[i];
-		}
-
-		int startIdx;
-		int offset;
-		int endIdx;
-		if (iteration < minLen) {
-			startIdx = 0;
-			offset = 1;
-		} else {
-			startIdx = 2;
-			offset = -1;
-		}
-		if (iteration < maxLen) {
-			endIdx = prev.length;
-		} else {
-			endIdx = prev.length - 2;
-		}
-
-		for (int i = startIdx; i < endIdx; i += 2) {
-			ret[i + offset] = prev[i];
-		}
-		return ret;
 	}
 
 	private int penalty(int maxIdx, int minIdx) {
@@ -144,12 +125,14 @@ public class EditDistance {
 	private class Worker implements Runnable {
 		private final int[] prev;
 		private final int[] current;
+		private final int currentLen;
 		private final int iteration;
 		private final int startIdx;
 		private final int stopIdx;
-		Worker(int[] prev, int[] current, int iteration, int startIdx, int stopIdx) {
+		Worker(int[] prev, int[] current, int currentLen, int iteration, int startIdx, int stopIdx) {
 			this.prev = prev;
 			this.current = current;
+			this.currentLen = currentLen;
 			this.iteration = iteration;
 			this.startIdx = startIdx;
 			this.stopIdx = stopIdx;
@@ -159,10 +142,9 @@ public class EditDistance {
 		public void run() {
 			for (int i = startIdx; i < stopIdx; i++) {
 				int a = 2;
-				doChunk(prev, current, iteration, startIdx, stopIdx);
+				doChunk(prev, current, currentLen, iteration, startIdx, stopIdx);
 			}
 		}
-		
 	}
 	
 	public static void main(String args[]) {
