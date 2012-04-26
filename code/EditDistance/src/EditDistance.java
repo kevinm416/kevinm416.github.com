@@ -140,10 +140,7 @@ public class EditDistance {
 		
 		@Override
 		public void run() {
-			for (int i = startIdx; i < stopIdx; i++) {
-				int a = 2;
-				doChunk(prev, current, currentLen, iteration, startIdx, stopIdx);
-			}
+			doChunk(prev, current, currentLen, iteration, startIdx, stopIdx);
 		}
 	}
 	
