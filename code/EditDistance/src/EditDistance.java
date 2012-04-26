@@ -1,13 +1,21 @@
-public class EditDistance {
-	// private static final ExecutorService threadPool =
-	// Executors.newFixedThreadPool(4);
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
+public class EditDistance {
+	private final ExecutorService threadPool;
+	private final int threadCount;
 	private final String maxStr;
 	private final String minStr;
 	private final int maxLen;
 	private final int minLen;
 
-	public EditDistance(String s1, String s2) {
+	public EditDistance(String s1, String s2, int threadCount) {
+		this.threadCount = threadCount;
+		threadPool = Executors.newFixedThreadPool(threadCount);
 		if (s1.length() < s2.length()) {
 			minStr = s1;
 			maxStr = s2;
@@ -34,14 +42,39 @@ public class EditDistance {
 				currentLen = iterations - i;
 			}
 			current = new int[currentLen];
-			parallelizeAll(prev, current, i);
+			parallelize(prev, current, i);
 			prev = combineDists(prev, current, i);
 		}
 		return current[0];
 	}
 
-	private void parallelizeAll(int[] prev, int[] current, int iteration) {
-		for (int i = 0; i < current.length; i++) {
+	private void parallelize(int[] prev, int[] current, int iteration) {
+		int chunkSize = Math.max(current.length / threadCount, 1);
+		List<Future<?>> futures = new ArrayList<Future<?>>();
+		for (int i = 0; i < current.length; i += chunkSize) {
+			int stopIdx = Math.min(current.length, i + chunkSize);
+			Runnable worker = new Worker(prev, current, iteration, i, stopIdx);
+			futures.add(threadPool.submit(worker));
+		}
+		for (Future<?> future : futures) {
+			try {
+				Object result = future.get();
+				if (result != null) {
+					throw new RuntimeException(result.toString());
+				}
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (ExecutionException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
+	}
+	
+	private void doChunk(int[] prev, int[] current, int iteration, int startIdx, int stopIdx) {
+		for (int i = startIdx; i < stopIdx; i++) {
 			int x;
 			int y;
 			int leftIdx;
@@ -103,9 +136,38 @@ public class EditDistance {
 	private int penalty(int maxIdx, int minIdx) {
 		return (maxStr.charAt(maxIdx) == minStr.charAt(minIdx)) ? 0 : 1;
 	}
-
+	
+	public void shutdown() {
+		threadPool.shutdown();
+	}
+	
+	private class Worker implements Runnable {
+		private final int[] prev;
+		private final int[] current;
+		private final int iteration;
+		private final int startIdx;
+		private final int stopIdx;
+		Worker(int[] prev, int[] current, int iteration, int startIdx, int stopIdx) {
+			this.prev = prev;
+			this.current = current;
+			this.iteration = iteration;
+			this.startIdx = startIdx;
+			this.stopIdx = stopIdx;
+		}
+		
+		@Override
+		public void run() {
+			for (int i = startIdx; i < stopIdx; i++) {
+				int a = 2;
+				doChunk(prev, current, iteration, startIdx, stopIdx);
+			}
+		}
+		
+	}
+	
 	public static void main(String args[]) {
-		EditDistance ed = new EditDistance("Saturday", "Sunday");
+		EditDistance ed = new EditDistance("Saturday", "Sunday", 4);
 		System.out.println(ed.editDist());
+		ed.shutdown();
 	}
 }
