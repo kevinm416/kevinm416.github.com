@@ -195,6 +195,7 @@ class Tetris(wx.Frame):
         self.paused = False
         self.game_over = False
         self.fall_interval = Tetris.FALL_INTERVAL
+        self.timer.reschedule(self.fall_interval)
         self.timer.restart()
         self.fall_hard_available = True
         self.used_positions = [[None]*Tetris.COLUMNS for i in xrange(Tetris.ROWS)]
