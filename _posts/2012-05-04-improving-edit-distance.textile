@@ -1,0 +1,281 @@
+---
+layout: post
+title: Improving Edit Distance
+---
+
+h1. {{ page.title }}
+
+"Previously":../../03/12/dynamic-programming-in-haskell.html, we implemented an algorithm to compute the "edit distance":http://wikipedia.org/wiki/Levenshtein_distance between two strings. When we investigate the structure of the edit distance subproblems, we see that there is no need to keep the results of most subproblems. 
+
+<table class="fixed" align="center" border="1" cellpadding="1" cellspacing="0" style="width: 250px; ">
+    <col span="9" width="20px"/>
+    <tbody>
+        <tr>
+            <td style="text-align: center; ">
+                Y</td>
+            <td style="text-align: center; ">
+                5</td>
+            <td style="text-align: center; ">
+                4</td>
+            <td style="text-align: center; background-color: rgb(102, 217, 239); ">
+                4</td>
+            <td style="text-align: center; background-color: rgb(249, 38, 114); ">
+                5</td>
+            <td style="text-align: center; ">
+                5</td>
+            <td style="text-align: center; ">
+                5</td>
+            <td style="text-align: center; ">
+                4</td>
+            <td style="text-align: center; ">
+                3</td>
+        </tr>
+        <tr>
+            <td style="text-align: center; ">
+                A</td>
+            <td style="text-align: center; ">
+                4</td>
+            <td style="text-align: center; ">
+                3</td>
+            <td style="text-align: center; background-color: rgb(102, 217, 239); ">
+                4</td>
+            <td style="text-align: center; background-color: rgb(249, 38, 114); ">
+                4</td>
+            <td style="text-align: center; ">
+                4</td>
+            <td style="text-align: center; ">
+                4</td>
+            <td style="text-align: center; ">
+                3</td>
+            <td style="text-align: center; ">
+                4</td>
+        </tr>
+        <tr>
+            <td style="text-align: center; ">
+                D</td>
+            <td style="text-align: center; ">
+                3</td>
+            <td style="text-align: center; ">
+                3</td>
+            <td style="text-align: center; background-color: rgb(102, 217, 239); ">
+                3</td>
+            <td style="text-align: center; background-color: rgb(249, 38, 114); ">
+                3</td>
+            <td style="text-align: center; ">
+                4</td>
+            <td style="text-align: center; ">
+                3</td>
+            <td style="text-align: center; ">
+                4</td>
+            <td style="text-align: center; ">
+                5</td>
+        </tr>
+        <tr>
+            <td style="text-align: center; ">
+                N</td>
+            <td style="text-align: center; ">
+                2</td>
+            <td style="text-align: center; ">
+                2</td>
+            <td style="text-align: center; background-color: rgb(102, 217, 239); ">
+                2</td>
+            <td style="text-align: center; background-color: rgb(249, 38, 114); ">
+                3</td>
+            <td style="text-align: center; ">
+                3</td>
+            <td style="text-align: center; ">
+                4</td>
+            <td style="text-align: center; ">
+                5</td>
+            <td style="text-align: center; ">
+                6</td>
+        </tr>
+        <tr>
+            <td style="text-align: center; ">
+                U</td>
+            <td style="text-align: center; ">
+                1</td>
+            <td style="text-align: center; ">
+                1</td>
+            <td style="text-align: center; background-color: rgb(102, 217, 239); ">
+                2</td>
+            <td style="text-align: center; background-color: rgb(249, 38, 114); ">
+                2</td>
+            <td style="text-align: center; ">
+                3</td>
+            <td style="text-align: center; ">
+                4</td>
+            <td style="text-align: center; ">
+                5</td>
+            <td style="text-align: center; ">
+                6</td>
+        </tr>
+        <tr>
+            <td style="text-align: center; ">
+                S</td>
+            <td style="text-align: center; ">
+                0</td>
+            <td style="text-align: center; ">
+                1</td>
+            <td style="text-align: center; background-color: rgb(102, 217, 239); ">
+                2</td>
+            <td style="text-align: center; background-color: rgb(249, 38, 114); ">
+                3</td>
+            <td style="text-align: center; ">
+                4</td>
+            <td style="text-align: center; ">
+                5</td>
+            <td style="text-align: center; ">
+                6</td>
+            <td style="text-align: center; ">
+                7</td>
+        </tr>
+        <tr>
+            <td style="text-align: center; ">
+                &nbsp;</td>
+            <td style="text-align: center; ">
+                S</td>
+            <td style="text-align: center; ">
+                A</td>
+            <td style="text-align: center; ">
+                T</td>
+            <td style="text-align: center; ">
+                U</td>
+            <td style="text-align: center; ">
+                R</td>
+            <td style="text-align: center; ">
+                D</td>
+            <td style="text-align: center; ">
+                A</td>
+            <td style="text-align: center; ">
+                Y</td>
+        </tr>
+    </tbody>
+</table>
+
+In the example above, to fill in the column highlighted in pink, we only need the blue subproblems. If we think about filling in each column in sequence, we see that we only need to keep the previous column in memory. This will be our strategy for reducing the memory requirement for calculating the edit distance between two strings.
+
+h3. Setting Up the Problem
+
+First, we will define a struct to represent a edit distance problem. The @max_str@ and @min_str@ fields point to the longer and the shorter of the two strings, respectively. We will need to use the lengths of the two strings frequently, so we store their lengths in @max_len@ and @min_len@.
+
+{% highlight c %}
+typedef struct {
+    char *max_str;
+    char *min_str;
+    int max_len;
+    int min_len;
+} editd;
+{% endhighlight %}
+
+The penalty function for edit distance compares a character in @max_str@ with a character in @min_str@, and returns 0 if they are the same, and 1 otherwise.
+
+{% highlight c %}
+int editd_penalty(editd *prob, int x, int y) {
+    return (prob->max_str[x] == prob->min_str[y]) ? 0 : 1;
+}
+{% endhighlight %}
+
+h3. Finding the Edit Distance
+
+As we illustrated at the beginning of this post, we can move from left to right through the columns of the edit distance table while storing only two columns worth of subproblems. Inside @editd_solve@ we allocate two @int@ arrays that we use as these columns. The first, @prev@, holds the column of subproblems calculated in the previous step of the algorithm. The other, @column@, is the column of subproblems we are currently calculating. As we expect, @column@ is assigned to @prev@ before the next iteration begins. By also assigning @current@ the old value of @prev@ we avoid having to allocate a new array, since we can overwrite those values. 
+
+{% highlight c %}
+int editd_solve(editd *prob) {
+    if (prob->min_len == 0) {
+        return prob->max_len;
+    }
+    int *column = malloc(sizeof(int)*prob->min_len);
+    int *prev = malloc(sizeof(int)*prob->min_len);
+    editd_base_case(prob, prev);
+    for (int i = 1; i < prob->max_len; i++) {
+        editd_worker(prob, prev, column, i);
+        int *temp = prev;
+        prev = column;
+        column = temp;
+    }
+    int ret = prev[prob->min_len - 1];
+    free(column);
+    free(prev);
+    return ret;
+}
+{% endhighlight %}
+
+Filling in the first column of the table is a special case. There is no @prev@ column, so all left and diagonal subproblems will use the base case instead. We do not need to do any comparisons to fill in the @column[0]@. The down and left subproblems will always be at least 2, but the diagonal subproblem can be at most 1, so we just use that value. 
+
+The left subproblem for @column[i]@ is at least @i+2@. However, since @column[0]@ is at most 1, by choosing only down subproblems, we can always get a subproblem value of @i+1@ at @column[i]@. So we ignore left subproblems when filling in the first column.
+
+{% highlight c %}
+void editd_base_case(editd *prob, int* column) {
+    column[0] = editd_penalty(prob, 0, 0);
+    for (int i = 1; i < prob->min_len; i++) {
+        int down = 1 + column[i - 1];
+        int diagonal = i + editd_penalty(prob, 0, i);
+        column[i] = min(down, diagonal);
+    }
+}
+{% endhighlight %}
+
+The @editd_worker@ function calculates the subproblems for a column in the edit distance table, given the previous column. We have @column[0]@ broken out of the loop because we have to deal with calculating the base cases for the down and diagonal subproblems. After that, filling in the rest of the column is straightforward.
+
+{% highlight c %}
+void editd_worker(editd *prob, int *prev, int *column, int iteration) {
+    int left = 1 + prev[0];
+    int down = 2 + iteration;
+    int diagonal = editd_penalty(prob, iteration, 0) + iteration;
+    column[0] = min(left, min(down, diagonal));
+    for (int i = 1; i < prob->min_len; i++) {
+        left = 1 + prev[i];
+        down = 1 + column[i - 1];
+        diagonal = editd_penalty(prob, iteration, i) + prev[i - 1];
+        column[i] = min(left, min(down, diagonal));
+    }
+}
+{% endhighlight %}
+
+h3. Running the Program
+
+We want to test this program with large strings, so we will make a function to create those strings for us. Given a buffer and a length, @random_string@ fills the buffer with lower case letters, and @NULL@ terminates the string.
+
+{% highlight c %}
+void random_string(char *buf, int len) {
+    static char *alphabet = "abcdefghijklmnopqrstuvwxyz";
+    for (int i = 0; i < len - 1; i++) {
+        buf[i] = alphabet[rand() % 26];
+    }
+    buf[len-1] = '\0';
+}
+{% endhighlight %}
+
+Now we can set up @main@ to generate large strings, and find the edit distance between them. 
+
+{% highlight c %}
+int main(int argc, char *argv[]) {
+    if (argc != 2) {
+        printf("Usage: length\n");
+        exit(1);
+    }
+    srand(time(NULL));
+
+    int length = atoi(argv[1]);
+    char *s1 = (char *) malloc(sizeof(char)*length);
+    char *s2 = (char *) malloc(sizeof(char)*length);
+    random_string(s1, length);
+    random_string(s2, length);
+    editd prob;
+    editd_create(&prob, s1, s2);
+
+    struct timeval start, end;
+    gettimeofday(&start, NULL);
+    int res = editd_solve(&prob);
+    gettimeofday(&end, NULL);
+    printf("%ld us\n", ((end.tv_sec * 1000000 + end.tv_usec)
+          - (start.tv_sec * 1000000 + start.tv_usec)));
+    printf("RESULT: %d\n", res);
+
+    free(s1);
+    free(s2);
+}
+{% endhighlight %}
+
+Since we are only using @O(min_len + max_len)@ space, we can run this on much longer strings than would be possible if we kept the entire table of subproblems. For example, running this program with stings of length one hundred thousand takes approximately 1MiB of memory on my machine. That includes some overhead not associated with storing subproblems. If we were to keep the entire table, we would need almost 10GB of memory for storing the subproblems alone. 

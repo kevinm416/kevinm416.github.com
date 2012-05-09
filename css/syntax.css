@@ -2,24 +2,25 @@
 .highlight .c  { color: #75715e } /* Comment */
 .highlight .c1 { color: #75715e } /* Comment.Single */
 .highlight .cm { color: #75715e } /* Comment.Multiline */
+.highlight .nf { color: #a6e22e } /* fn def */
 .highlight .k  { color: #66d9ef } /* Keyword */
+.highlight .kt { color: #66d9ef } /* key term? */
 .highlight .mf { color: #a381ff } /* Literal.Number.Float */
 .highlight .mh { color: #a381ff } /* Literal.Number.Hex */
 .highlight .mi { color: #a381ff } /* Literal.Number.Integer */
 .highlight .mo { color: #a381ff } /* Literal.Number.Oct */
+.highlight .o  { color: #F92672 } /* operator */
 .highlight .s  { color: #e6db74 } /* String literal */
+.highlight .sc { color: #a381ff } /* chars */
 
-/*Haskell*/
-.highlight .o  { color: #F92672 }
-.highlight .ow { color: #F92672 } /* operator? */
-.highlight .kt { color: #66d9ef } /* key term? */
-.highlight .kr { color: #F92672 }
-
+.highlight .haskell .ow { color: #F92672 } /* operator? */
+.highlight .haskell .kr { color: #F92672 }
+.highlight .haskell .nf { color: #f8f8f2 }
 
 .highlight .go .k  { color: #f92672 } /* keywords */
 .highlight .go .nb { color: #66d9ef } /* types */
-.highlight .go .sc { color: #a381ff } /* chars */
 
-.highlight .python .nf { color: #a6e22e } /* fn def */
 .highlight .python .bp { color: #fd971f } /* self */
 .highlight .python .ow { color: #66d9ef } /* in */
+
+.highlight .c .n { color: #f8f8f2 }

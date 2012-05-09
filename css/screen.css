@@ -42,6 +42,14 @@ table {
   font: 100%;
 }
 
+table.fixed {
+  table-layout:fixed;
+}
+
+table.fixed td {
+  overflow: hidden;
+}
+
 img {
   vertical-align: middle;
   margin-bottom: 0em;

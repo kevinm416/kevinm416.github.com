@@ -140,7 +140,8 @@ Now we need to construct the array @edit@. As long as the three values at indice
           size = ((0,0), (x,y))
 
           edit :: Array (Int, Int) Int
-          edit = array size [(coord, recurrence coord) | coord <- range size]
+          edit = array size [(coord, recurrence coord) | 
+                              coord <- range size]
 {% endhighlight %}
 
 To run @editDistance@, we convert the input strings to arrays before calling @editDistance@.
