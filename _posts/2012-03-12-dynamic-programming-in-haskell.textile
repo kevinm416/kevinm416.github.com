@@ -6,7 +6,7 @@ math: true
 
 h1. {{ page.title }}
 
-This post will discuss the solutions to three dynamic programming problems in Haskell. Source code for these three problems is available "here":https://github.com/kevinm416/kevinm416.github.com/tree/master/code/dynamic.
+This post will discuss the solutions to three dynamic programming problems in Haskell. Source code for these three problems is available "here":http://github.com/kevinm416/kevinm416.github.com/tree/master/code/dynamic.
 
 h3. Maximum Sum Traveling from the Top to Base of a Pyramid
 

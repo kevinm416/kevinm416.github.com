@@ -155,6 +155,8 @@ h1. {{ page.title }}
 
 In the example above, to fill in the column highlighted in pink, we only need the blue subproblems. If we think about filling in each column in sequence, we see that we only need to keep the previous column in memory. This will be our strategy for reducing the memory requirement for calculating the edit distance between two strings.
 
+The source code associated with this post is available "here":http://github.com/kevinm416/kevinm416.github.com/tree/master/code/EditDistanceC.
+
 h3. Setting Up the Problem
 
 First, we will define a struct to represent a edit distance problem. The @max_str@ and @min_str@ fields point to the longer and the shorter of the two strings, respectively. We will need to use the lengths of the two strings frequently, so we store their lengths in @max_len@ and @min_len@.
@@ -233,7 +235,7 @@ void editd_worker(editd *prob, int *prev, int *column, int iteration) {
 }
 {% endhighlight %}
 
-h3. Running the Program
+h3. Running Edit Distance
 
 We want to test this program with large strings, so we will make a function to create those strings for us. Given a buffer and a length, @random_string@ fills the buffer with lower case letters, and @NULL@ terminates the string.
 
