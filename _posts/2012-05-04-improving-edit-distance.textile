@@ -237,7 +237,7 @@ void editd_worker(editd *prob, int *prev, int *column, int iteration) {
 
 h3. Running Edit Distance
 
-We want to test this program with large strings, so we will make a function to create those strings for us. Given a buffer and a length, @random_string@ fills the buffer with lower case letters, and @NULL@ terminates the string.
+We want to test this program with large strings, so we will make a function to create those strings for us. Given a buffer and a length, @random_string@ fills the buffer with lower case letters, and terminates the string with @NULL@.
 
 {% highlight c %}
 void random_string(char *buf, int len) {
@@ -280,4 +280,4 @@ int main(int argc, char *argv[]) {
 }
 {% endhighlight %}
 
-Since we are only using @O(min_len + max_len)@ space, we can run this on much longer strings than would be possible if we kept the entire table of subproblems. For example, running this program with stings of length one hundred thousand takes approximately 1MiB of memory on my machine. That includes some overhead not associated with storing subproblems. If we were to keep the entire table, we would need almost 10GB of memory for storing the subproblems alone. 
+Since we are only using @O(min_len + max_len)@ space, we can run this on much longer strings than would be possible if we kept the entire table of subproblems. For example, running this program with stings of length one hundred thousand takes approximately 1MB of memory on my machine. That includes some overhead not associated with storing subproblems. If we were to keep the entire table, we would need almost 10GB of memory for storing the subproblems alone. 

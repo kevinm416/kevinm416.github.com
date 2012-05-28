@@ -1,0 +1,2 @@
+6 6
+S 1 2 1 HORIZONTAL

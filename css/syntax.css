@@ -4,11 +4,15 @@
 .highlight .cm { color: #75715e } /* Comment.Multiline */
 .highlight .nf { color: #a6e22e } /* fn def */
 .highlight .k  { color: #66d9ef } /* Keyword */
+.highlight .kc { color: #66d9ef } /* Java null */
+.highlight .kd { color: #F92672;}
 .highlight .kt { color: #66d9ef } /* key term? */
 .highlight .mf { color: #a381ff } /* Literal.Number.Float */
 .highlight .mh { color: #a381ff } /* Literal.Number.Hex */
 .highlight .mi { color: #a381ff } /* Literal.Number.Integer */
 .highlight .mo { color: #a381ff } /* Literal.Number.Oct */
+.highlight .na { color: #a6e22e } /* Java Method */
+.highlight .nd { color: #F92672 } /* Java annotation */
 .highlight .o  { color: #F92672 } /* operator */
 .highlight .s  { color: #e6db74 } /* String literal */
 .highlight .sc { color: #a381ff } /* chars */
@@ -23,4 +27,5 @@
 .highlight .python .bp { color: #fd971f } /* self */
 .highlight .python .ow { color: #66d9ef } /* in */
 
-.highlight .c .n { color: #f8f8f2 }
+.highlight .c .n { color: #f8f8f2 } /* normal */
+.highlight .c .nb { color: #a381ff } /* NULL */

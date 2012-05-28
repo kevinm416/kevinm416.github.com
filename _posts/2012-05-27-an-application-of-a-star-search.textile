@@ -1,0 +1,291 @@
+---
+layout: post
+title: An Application of A* Search
+---
+
+h1. {{ page.title }}
+
+Many readers will be acquainted with the game Rush Hour. The objective is to move a special, red car off the game board while other cars block the exit. The cars move within a grid system, and each can only move either vertically or horizontally.
+
+We will find solutions to instances of this problem using the A* search algorithm. The A* algorithm promises not only to find solutions to instances of these problems, but also to find optimal solutions. 
+
+The solution here is implemented in Java, which tends to be somewhat verbose. As a result I have omitted the implementations of many methods that would be obvious to someone familiar with Java. To see the project in its entirety, the source is "here":http://github.com/kevinm416/kevinm416.github.com/tree/master/code/traffic. Also note that "Apache Commons":http://commons.apache.org/lang/ and "Google Collections":http://code.google.com/p/guava-libraries/ are dependencies of this project.
+
+h3. Overview
+
+The key to easily implementing a solution to this problem is to interpret the problem in the form of a graph. Each node on the graph is a state of the puzzle, which will be represented by instances of the @PuzzleState@ class. Moves can be thought of as edges between states. 
+
+h3. Setting Up the Problem
+
+First, let us provide definitions for the @Direction@ and @Car@ classes that will be used throughout the rest of the code.
+
+The @Direction@ enum is used by the @Car@ class to signify which direction @Car@ instances are allowed to move.
+
+{% highlight java %}
+public enum Direction {
+    HORIZONTAL,
+    VERTICAL
+}
+{% endhighlight %}
+
+Each @Car@ stores the position of its upper left hand corner in @(row, column)@. From there it extends @size@ squares in the direction specified by @direction@. Note that <code>Car</code>s are immutable; moving a car returns a new instance.
+
+{% highlight java %}
+public class Car {
+    private final int column, row, size;
+    private final Direction direction;
+    public Car move(int amt);
+    public boolean intersects(Car other);
+}
+{% endhighlight %}
+
+h3. Puzzle State
+
+Finding a sequence of moves to take the puzzle from its initial state to a solution state is a 
+
+In this implementation, the order of @Car@ instances in @cars@ is deliberately preserved when creating new @PuzzleState@ instances. The result of this invariant is two @PuzzleState@ instances are equal, if their @cars@ arrays have equal @Car@ instances at corresponding indices.As a side-note, the special car is stored at index 0 in @cars@.
+
+However, it will be necessary to store more information than this in order to implement A*. Each @PuzzleState@ should have a reference to the state was explored before it. By storing the @parent@ state, we can walk along these reference from a solution back to the initial state to get the sequence of states that lead to a solution. 
+
+@pathLength@ is the number of steps this state is from the initial state. We also store the heuristic used in A* so we do not need to recalculate it every time it is used.
+
+{% highlight java %}
+public class PuzzleState implements Comparable<PuzzleState> {
+    private final PuzzleState parent;
+    private final int pathLength;
+    private final List<Car> cars;
+    private final int heuristic;
+    private int calculateHeuristic();
+    @Override public int compareTo(PuzzleState o);
+{% endhighlight %}
+
+The main use of @PuzzleState@ is to provide a list of its children: states that can be reached from the current @PuzzleState@ in one move. To assist with finding the children, we have defined the private static class @PuzzleBitmap@. 
+
+{% highlight java %}
+    private static class PuzzleBitmap {
+        private boolean[][] carPositions;
+        public void addCar(Car car);
+        public boolean get(int row, int column);
+    }
+{% endhighlight %}
+
+To find the children of a given @PuzzleState@, we add each @Car@ in @cars@ to a @PuzzleBitmap@. Then for each @Car@, we check if the positions ahead and behind it are available. Each such available position constitutes a valid move. We can move that car, and create a new @PuzzleState@ that has the moved car in place of the old car.
+
+{% highlight java %}
+    private PuzzleBitmap fillBitmap() {
+        PuzzleBitmap bitmap = new PuzzleBitmap(rows, columns);
+        for (Car car : cars) {
+            bitmap.addCar(car);
+        }
+        return bitmap;
+    }
+    public List<PuzzleState> getChildren() {
+        List<PuzzleState> children = Lists.newArrayList();
+        PuzzleBitmap board = fillBitmap();
+        for (int i = 0; i < cars.size(); i++) {
+            Car movingCar = cars.get(i);
+            switch (movingCar.getDirection()) {
+                case HORIZONTAL:
+                    children.addAll(horizontalMoves(board, movingCar, i));
+                    break;
+                case VERTICAL:
+                    children.addAll(verticalMoves(board, movingCar, i));
+                    break;
+        }   }
+        return children;
+    }
+{% endhighlight %}
+
+We can determine if this is a solution state by checking if the rightmost column occupied by the special car is the edge of the board.
+
+{% highlight java %}
+    public boolean isSolution() {
+        return cars.get(0).getColumnBound() == columns - 1;
+    }
+}
+{% endhighlight %}
+
+h3. Searching With A*
+
+Now that we have defined the interface for @PuzzleState@, we can look at how to search for solutions.
+
+The "A* algorithm":http://en.wikipedia.org/wiki/A_star requires maintaining a queue of states ordered by their cost plus heuristic. This can be achieved using a @java.util.PriorityQueue@. This @PriorityQueue@ will order its elements by their natural ordering, as determined by their @compareTo@ method. Let us look at the implementation of @PuzzleState.compareTo@ that causes our @PriorityQueue@ to order @PuzzleState@ by increasing cost plus heuristic.
+
+{% highlight java %}
+public int compareTo(PuzzleState o) {
+    int thisCost = pathLength + heuristic;
+    int otherCost = o.pathLength + o.heuristic;
+    return thisCost - otherCost;
+}
+{% endhighlight %}
+
+The other requirement for running A* is a consistent and admissible heuristic. Our heuristic is the count of the number of cars blocking the special car from exiting. This heuristic is admissible because each car that blocks the special car from exiting will take at least one move to get out of the way. Therefore it always underestimates the number of moves from the current state to the solution state. We can also guarantee that this heuristic is admissible. The heuristic of any state that we reach from the current state can be no less than the heuristic of the current state minus the number of moves taken, because each move can remove at most one blocking car. The implementation of this is in @PuzzleState.calculateHeuristic@.
+
+{% highlight java %}
+private int calculateHeuristic() {
+    int blockingCount = 0;
+    Car specialCar = cars.get(0);
+    for (int i = 1; i < cars.size(); i++) {
+        Car current = cars.get(i);
+        if (isBlockingExit(specialCar, current)) {
+            blockingCount++;
+        }
+    }
+    if (!isSolution()) {
+        blockingCount += 1; 
+    }
+    return blockingCount;
+}
+{% endhighlight %}
+
+One may be wondering about incrementing @blockingCount@ when the current state is not the solution. Think about the special car as blocking itself until it is moved to the solution position. If it is not in the solution position, then it will take it at least one move to get there.
+
+Now we have everything we need to implement A*. 
+
+{% highlight java %}
+public class Puzzle {
+    private final PuzzleState startState;
+    public List<PuzzleState> aStar() {
+        Queue<PuzzleState> openSet = new PriorityQueue<PuzzleState>();
+        Set<PuzzleState> closedSet = Sets.newHashSet();
+        openSet.add(startState);
+        PuzzleState currentState;
+        while (!openSet.isEmpty()) {
+            currentState = openSet.poll();
+            if (currentState.isSolution()) {
+                return getPath(currentState);
+            }
+            if (!closedSet.contains(currentState)) {
+                closedSet.add(currentState);
+                List<PuzzleState> children = currentState.getChildren();
+                for (PuzzleState child : children) {
+                    if (!closedSet.contains(child)) {
+                        openSet.add(child);
+        }   }   }   }
+        throw new IllegalArgumentException("No solutions");
+    }
+{% endhighlight %}
+
+Recall that each @PuzzleState@ has a reference to its parent. To get the sequence of states that led to the solution, we trace those back to the start state.
+
+{% highlight java %}
+    private List<PuzzleState> getPath(PuzzleState currentState) {
+        List<PuzzleState> path = Lists.newArrayList();
+        while (currentState != null) {
+            path.add(currentState);
+            currentState = currentState.getParent();
+        }
+        Collections.reverse(path);
+        return path;
+    }
+{% endhighlight %}
+
+This concludes the outline of how to use A* to solve this search problem. However, there are still loose ends regarding creating <code>Puzzle</code>s. The next section will address those.
+
+h3. Parsing Puzzles
+
+In the previous section, we quickly introduced @Puzzle@ as a place to put @aStar@. However, its reason for existence as a class is mainly to parse puzzle configurations.
+
+A valid configuration file has an initial line with the board dimensions separated by whitespace. Each subsequent line has the form:
+
+{% highlight text %}
+car_name    length    row    column    direction
+{% endhighlight %}
+
+And, at least one of those lines must have @car_name == Puzzle.SPECIAL_CAR_NAME@.
+
+We will use a builder to create <code>Puzzle</code>s. The setters for @cars@ and @carNames@ make defensive copies of the lists passed in, so it is safe to pass their references into @Puzzle@.
+
+{% highlight java %}
+    // Still inside Puzzle
+    public static final String SPECIAL_CAR_NAME = "S";
+    private final List<String> carNames;
+    private Puzzle(Builder b) {
+        this.startState = new PuzzleState(null, 0, b.rows, b.columns, b.cars);
+        this.carNames = b.carNames;
+    }
+    private static class Builder { // assume all getters and setters
+        Integer rows, columns;
+        ArrayList<Car> cars;
+        ArrayList<String> carNames;
+        public Puzzle build() { 
+            return new Puzzle(this);
+        }
+        public Builder setCars(List<Car> cars) {
+            this.cars = Lists.newArrayList(cars); return this;
+        }
+        public Builder setCarNames(List<String> carNames) {
+            this.carNames = Lists.newArrayList(carNames); return this;
+        }
+    }
+{% endhighlight %}
+
+We have two regular expressions for parsing the input file. The first matches two numbers separated by spaces, with noting else but whitespace on the line. @Puzzle.parseDimensions@ below attempts to match this against the first line of the input file.
+
+{% highlight java %}
+    private static final Pattern boardDimensionsRE = Pattern.compile(
+        "\\s*(\\d*)\\s*(\\d*)\\s*");
+    private static void parseDimensions(Builder puzzleBuilder,
+            BufferedReader input) throws IOException {
+        String firstLine = input.readLine();
+        Matcher dimensionMatcher = boardDimensionsRE.matcher(firstLine);
+        dimensionMatcher.matches();
+        int rows = Integer.parseInt(dimensionMatcher.group(1));
+        int columns = Integer.parseInt(dimensionMatcher.group(2));
+        puzzleBuilder.setRows(rows).setColumns(columns);
+    }
+{% endhighlight %}
+
+The second regular expression matches each of the fields we defined above, with whitespace separating them. @Puzzle.parseCars@ attempts to match this against each subsequent line in the input file.
+
+{% highlight java %}
+    private static final Pattern carPositionRE = Pattern.compile(
+        "\\s*(\\w*)\\s*(\\d*)\\s*(\\d*)\\s*(\\d*)\\s*(\\w*)\\s*");
+    private static void parseCars(Builder puzzleBuilder, BufferedReader input)
+            throws IOException {
+        List<Car> cars = Lists.newArrayList();
+        List<String> carNames = Lists.newArrayList();
+        String line;
+        while ((line = input.readLine()) != null) {
+            Matcher carMatcher = carPositionRE.matcher(line);
+            carMatcher.matches();
+            String carName = carMatcher.group(1);
+            int carLength = Integer.valueOf(carMatcher.group(2));
+            int startRow = Integer.valueOf(carMatcher.group(3));
+            int startCol = Integer.valueOf(carMatcher.group(4));
+            Direction startDir = Direction.valueOf(
+                carMatcher.group(5).toUpperCase());
+            Car newCar = new Car(startRow, startCol, carLength, startDir);
+            if (carName.equals(SPECIAL_CAR_NAME)) {
+                cars.add(0, newCar);
+                carNames.add(0, carName);
+            } else {
+                cars.add(newCar);
+                carNames.add(carName);
+            }
+        }
+        puzzleBuilder.setCars(cars).setCarNames(carNames);
+    }
+{% endhighlight %}
+
+Now we just need a method to open the input file and call each of the parsing methods in sequence before returning our @Puzzle@ instance. 
+
+{% highlight java %}
+    public static Puzzle ParseFile(String fileName) {
+        Builder puzzleBuilder = new Builder();
+        try {
+            BufferedReader input = new BufferedReader(
+                new FileReader(new File(fileName)));
+            parseDimensions(puzzleBuilder, input);
+            parseCars(puzzleBuilder, input);
+        } catch (FileNotFoundException e) {
+            throw new IllegalArgumentException("File: " + fileName
+                + " does not exist", e);
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Error parsing file: "
+                + fileName, e);
+        }
+        return puzzleBuilder.build();
+    }
+}
+{% endhighlight %}

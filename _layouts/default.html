@@ -14,20 +14,16 @@
   <!-- Homepage CSS -->
   <link rel="stylesheet" href="/css/screen.css" type="text/css" media="screen, projection" />
   
-  {% if page.math %}
-  <!-- Mathjax -->
+  {% if page.math %} <!-- Mathjax -->
   <script type="text/javascript"
-   src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
     MathJax.Hub.Config({
     tex2jax: {
       inlineMath: [ ['$','$'], ["\\(","\\)"] ],
       processEscapes: true
     }
   });
-  </script>
-  {% endif %}
-
-  
+  </script>{% endif %}
 
   <!-- Google Analytics -->
   <script type="text/javascript">
@@ -48,9 +44,7 @@
     <a href="/">Kevin Morgan</a>
     <a class="extra" href="/">home</a>
   </div>
-  
   {{ content }}
-  
   <div class="footer">
     <div class="contact">
       <p>
