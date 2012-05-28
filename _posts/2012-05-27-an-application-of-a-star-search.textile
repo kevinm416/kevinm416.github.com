@@ -7,13 +7,13 @@ h1. {{ page.title }}
 
 Many readers will be acquainted with the game Rush Hour. The objective is to move a special, red car off the game board while other cars block the exit. The cars move within a grid system, and each can only move either vertically or horizontally.
 
-We will find solutions to instances of this problem using the A* search algorithm. The A* algorithm promises not only to find solutions to instances of these problems, but also to find optimal solutions. 
+We will find solutions to instances of this problem using the A* search algorithm. This algorithm promises not only to find solutions to instances of these problems, but also to find solutions that use the minimum number of moves. 
 
 The solution here is implemented in Java, which tends to be somewhat verbose. As a result I have omitted the implementations of many methods that would be obvious to someone familiar with Java. To see the project in its entirety, the source is "here":http://github.com/kevinm416/kevinm416.github.com/tree/master/code/traffic. Also note that "Apache Commons":http://commons.apache.org/lang/ and "Google Collections":http://code.google.com/p/guava-libraries/ are dependencies of this project.
 
 h3. Overview
 
-The key to easily implementing a solution to this problem is to interpret the problem in the form of a graph. Each node on the graph is a state of the puzzle, which will be represented by instances of the @PuzzleState@ class. Moves can be thought of as edges between states. 
+The key to easily implementing a solution to this problem is to interpret the problem in the form of a graph. Each node on the graph is a state of the puzzle, which will be represented by instances of the @PuzzleState@ class. Moves can be thought of as edges between states. Once we can represent the problem in this graph format, it becomes easy to run A* on it.
 
 h3. Setting Up the Problem
 
@@ -28,7 +28,7 @@ public enum Direction {
 }
 {% endhighlight %}
 
-Each @Car@ stores the position of its upper left hand corner in @(row, column)@. From there it extends @size@ squares in the direction specified by @direction@. Note that <code>Car</code>s are immutable; moving a car returns a new instance.
+Each @Car@ stores the position of its upper left hand corner in @(row, column)@. From there it occupies @size@ squares in the direction specified by @direction@. Note that <code>Car</code>s are immutable; moving a car returns a new instance.
 
 {% highlight java %}
 public class Car {
@@ -41,13 +41,13 @@ public class Car {
 
 h3. Puzzle State
 
-Finding a sequence of moves to take the puzzle from its initial state to a solution state is the goal we are ultimately working towards. We need to create a @PuzzleState@ class to represent nodes in the graph of the configurations of the puzzle. The configuration or state of the puzzle can be described completely by the location and orientation of its <code>Car</code>s. 
+Finding a sequence of moves to take the puzzle from its initial state to a solution state is the goal we are ultimately working towards. We need to create a @PuzzleState@ class to represent nodes in the graph of the configurations of the puzzle. The configuration or state of the puzzle can be described completely by the location and orientation of thes <code>Car</code>s. 
 
-In this implementation, the order of @Car@ instances in @cars@ is deliberately preserved when creating new @PuzzleState@ instances. The result of this invariant is two @PuzzleState@ instances are equal, if their @cars@ arrays have equal @Car@ instances at corresponding indices.As a side-note, the special car is stored at index 0 in @cars@.
+In this implementation, the order of @Car@ instances in @cars@ is deliberately preserved when creating new @PuzzleState@ instances. The result of this invariant is two @PuzzleState@ instances are equal if their @cars@ arrays have equal @Car@ instances at corresponding indices. As a side-note, the special car is stored at index 0 in @cars@.
 
 However, it will be necessary to store more information than this in order to implement A*. Each @PuzzleState@ should have a reference to the state was explored before it. By storing the @parent@ state, we can walk along these reference from a solution back to the initial state to get the sequence of states that lead to a solution. 
 
-@pathLength@ is the number of steps this state is from the initial state. We also store the heuristic used in A* so we do not need to recalculate it every time it is used.
+@pathLength@ is the number of moves this state is from the initial state. We also store the heuristic used in A* so we do not need to recalculate it every time it is used.
 
 {% highlight java %}
 public class PuzzleState implements Comparable<PuzzleState> {
@@ -96,7 +96,7 @@ To find the children of a given @PuzzleState@, we add each @Car@ in @cars@ to a 
     }
 {% endhighlight %}
 
-We can determine if this is a solution state by checking if the rightmost column occupied by the special car is the edge of the board.
+We can determine if the current configuration is a solution state by checking if the rightmost column occupied by the special car is at the edge of the board.
 
 {% highlight java %}
     public boolean isSolution() {
@@ -119,7 +119,7 @@ public int compareTo(PuzzleState o) {
 }
 {% endhighlight %}
 
-The other requirement for running A* is a consistent and admissible heuristic. Our heuristic is the count of the number of cars blocking the special car from exiting. This heuristic is admissible because each car that blocks the special car from exiting will take at least one move to get out of the way. Therefore it always underestimates the number of moves from the current state to the solution state. We can also guarantee that this heuristic is admissible. The heuristic of any state that we reach from the current state can be no less than the heuristic of the current state minus the number of moves taken, because each move can remove at most one blocking car. The implementation of this is in @PuzzleState.calculateHeuristic@.
+The other requirement for running A* is a consistent and admissible heuristic. Our heuristic is the count of the number of cars blocking the special car from exiting. This heuristic is admissible because each car that blocks the special car from exiting will take at least one move to get out of the way. Therefore it always underestimates the number of moves from the current state to the solution state. We can also guarantee that this heuristic is consistent. The value of the heuristic at any state that we reach from the current state can be no less than the heuristic at the current state minus the number of moves taken, because each move can remove at most one blocking car. The implementation of this is in @PuzzleState.calculateHeuristic@.
 
 {% highlight java %}
 private int calculateHeuristic() {
@@ -184,9 +184,7 @@ This concludes the outline of how to use A* to solve this search problem. Howeve
 
 h3. Parsing Puzzles
 
-In the previous section, we quickly introduced @Puzzle@ as a place to put @aStar@. However, its reason for existence as a class is mainly to parse puzzle configurations.
-
-A valid configuration file has an initial line with the board dimensions separated by whitespace. Each subsequent line has the form:
+In the previous section, we quickly introduced @Puzzle@ as a place to put @aStar@. However, its reason for existence as a class is mainly to read puzzle configurations from files. A valid configuration file has an initial line with the board dimensions separated by whitespace. Each subsequent line has the form:
 
 {% highlight text %}
 car_name    length    row    column    direction
