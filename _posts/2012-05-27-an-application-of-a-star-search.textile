@@ -41,7 +41,7 @@ public class Car {
 
 h3. Puzzle State
 
-Finding a sequence of moves to take the puzzle from its initial state to a solution state is a 
+Finding a sequence of moves to take the puzzle from its initial state to a solution state is the goal we are ultimately working towards. We need to create a @PuzzleState@ class to represent nodes in the graph of the configurations of the puzzle. The configuration or state of the puzzle can be described completely by the location and orientation of its <code>Car</code>s. 
 
 In this implementation, the order of @Car@ instances in @cars@ is deliberately preserved when creating new @PuzzleState@ instances. The result of this invariant is two @PuzzleState@ instances are equal, if their @cars@ arrays have equal @Car@ instances at corresponding indices.As a side-note, the special car is stored at index 0 in @cars@.
 
