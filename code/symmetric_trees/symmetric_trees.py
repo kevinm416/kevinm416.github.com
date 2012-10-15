@@ -42,9 +42,9 @@ def reconstruct_binary_tree(lst):
     for (idx, val) in enumerate(lst):
         if val > max_val:
             max_idx, max_val = idx, val
-    return Node(val, 
-        reconstruct_binary_tree(lst[:idx]),
-        reconstruct_binary_tree(lst[idx+1:]))
+    return Node(max_val, 
+        reconstruct_binary_tree(lst[:max_idx]),
+        reconstruct_binary_tree(lst[max_idx+1:]))
 
 
 if __name__ == '__main__':

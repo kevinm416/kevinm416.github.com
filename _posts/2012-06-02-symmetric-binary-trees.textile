@@ -74,8 +74,8 @@ def reconstruct_binary_tree(lst):
     for (idx, val) in enumerate(lst):
         if val > max_val:
             max_idx, max_val = idx, val
-    return Node(val, reconstruct_binary_tree(lst[:idx]),
-                     reconstruct_binary_tree(lst[idx + 1:]))
+    return Node(max_val, reconstruct_binary_tree(lst[:max_idx]),
+                         reconstruct_binary_tree(lst[max_idx + 1:]))
 {% endhighlight %}
 
 If two binary trees are equal, then they will produce the same list of integers, because their in order traversals will be equal. If two integer list encodings of binary trees are equal, then they will be reconstructed to the same binary tree, because of the invariant that allowed us to write @reconstruct_binary_tree@. What we have defined is a one-to-one function from binary trees to lists of natural numbers. 
