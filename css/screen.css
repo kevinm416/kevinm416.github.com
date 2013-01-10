@@ -42,12 +42,9 @@ table {
   font: 100%;
 }
 
-table.fixed {
-  table-layout:fixed;
-}
-
-table.fixed td {
-  overflow: hidden;
+.bordered {
+  border: solid #CCC 1px;
+  border-radius: 4px;
 }
 
 img {
@@ -95,28 +92,28 @@ ul.posts {
   line-height: 1.5em;
 }
 
-.title {
-  color: #a00;
-  font-weight: bold;
-  margin-bottom: 2em;
-}
+  .site header {
+    color: #a00;
+    font-weight: bold;
+    margin-bottom: 2em;
+  }
 
-  .site .title a {
+  .site header a {
     color: #a00;
     text-decoration: none;
   }
 
-  .site .title a:hover {
+  .site header a:hover {
     color: black;
   }
 
-  .site .title a.extra {
+  .site header a.extra {
     color: #aaa;
     text-decoration: none;
     margin-left: 1em;
   }
 
-  .site .title a.extra:hover {
+  .site header a.extra:hover {
     color: black;
   }
 
@@ -124,7 +121,7 @@ ul.posts {
     color: #aaa;
   }
 
-  .site .footer {
+  footer {
     font-size: 80%;
     color: #666;
     border-top: 4px solid #eee;
@@ -132,12 +129,12 @@ ul.posts {
     overflow: hidden;
   }
 
-    .site .footer .contact {
+    .site footer .contact {
       float: left;
       margin-right: 3em;
     }
 
-      .site .footer .contact a {
+      .site footer .contact a {
         color: #8085C1;
       }
 
@@ -147,31 +144,29 @@ ul.posts {
 /*
 /*****************************************************************************/
 
-#post {
+article {
 
 }
 
-  /* standard */
-
-  #post pre {
+  article pre {
     border: 1px solid #ddd;
     background-color: #272822;
     padding: 0 .4em;
   }
 
-  #post ul,
-  #post ol {
+  article ul,
+  article ol {
     margin-left: 1.35em;
   }
 
-  #post code {
+  article code {
     font-family: 'Droid Sans Mono';
     border: 1px solid #ddd;
     font-size: 85%;
     padding: 0 .2em;
   }
 
-  #post pre code {
+  article pre code {
     border: none;
   }
 

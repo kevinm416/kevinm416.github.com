@@ -7,7 +7,7 @@ h1. {{ page.title }}
 
 "Previously":../../03/12/dynamic-programming-in-haskell.html, we implemented an algorithm to compute the "edit distance":http://wikipedia.org/wiki/Levenshtein_distance between two strings. When we investigate the structure of the edit distance subproblems, we see that there is no need to keep the results of most subproblems. 
 
-<table class="fixed" align="center" border="1" cellpadding="1" cellspacing="0" style="width: 250px; ">
+<table class="bordered" align="center">
     <col span="9" width="20px"/>
     <tbody>
         <tr>

@@ -47,19 +47,19 @@ In this implementation, the order of @Car@ instances in @cars@ is deliberately p
 
 However, it will be necessary to store more information than this in order to implement A*. Each @PuzzleState@ should have a reference to the state was explored before it. By storing the @parent@ state, we can walk along these reference from a solution back to the initial state to get the sequence of states that lead to a solution. 
 
-@pathLength@ is the number of moves this state is from the initial state. We also store the heuristic used in A* so we do not need to recalculate it every time it is used.
+@pathLength@ is the number of moves this state is from the initial state. We also store the @heuristic@ used in A* so we do not need to recalculate it every time it is used.
 
 {% highlight java %}
 public class PuzzleState implements Comparable<PuzzleState> {
+    private final List<Car> cars;
     private final PuzzleState parent;
     private final int pathLength;
-    private final List<Car> cars;
     private final int heuristic;
     private int calculateHeuristic();
     @Override public int compareTo(PuzzleState o);
 {% endhighlight %}
 
-The main use of @PuzzleState@ is to provide a list of its children: states that can be reached from the current @PuzzleState@ in one move. To assist with finding the children, we have defined the private static class @PuzzleBitmap@. 
+The main use of @PuzzleState@ is to provide a list of its children: states that can be reached from the current @PuzzleState@ in one move. To assist with finding the children, we define the private static class @PuzzleBitmap@. 
 
 {% highlight java %}
     private static class PuzzleBitmap {
